@@ -1,0 +1,4 @@
+.DS_Store
+*.bak.html
+*.tmp.html
+.cursor/

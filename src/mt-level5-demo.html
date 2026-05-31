@@ -97,6 +97,7 @@
 <script src="mt-level-progress.js"></script>
 <script src="mt-game-analytics.js"></script>
 <script src="mt-game-bgm.js"></script>
+<script src="mt-leaderboard.js"></script>
 <script src="mt-game-ui.js"></script>
 <script>
 const cv=document.getElementById("cv"), ctx=cv.getContext("2d");
@@ -544,7 +545,10 @@ function win(){
   const sitMic=ents.find(m=>m.type==="mic"&&m.unlock==="sit");
   if(sitMic&&!sitMic.open) return;
   won=true; sfx.win();
-  if(window.MTProgress) MTProgress.completeLevel(5);
+  if(window.MTProgress){
+    MTProgress.completeLevel(5);
+    MTProgress.addRunCoins(score);
+  }
   if(window.MTUI) MTUI.track("level_win", { score, livesLeft: lives });
   MTUI.toast("落座成功……");
   setTimeout(()=>{ location.href="mt-epilogue.html"; },400);

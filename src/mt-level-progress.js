@@ -1,6 +1,8 @@
 /* MT大冒险 · 浏览器本地关卡进度（localStorage） */
 window.MTProgress = (function(){
   const STORAGE_KEY = "mt_zack_level_progress";
+  const RUN_COINS_KEY = "mt_zack_run_coins";
+  const CEO_NAME_KEY = "mt_zack_ceo_name";
   const TOTAL = 5;
   const LEVELS = [
     { id: 1, file: "mt-level1-demo.html", name: "上班路上" },
@@ -49,6 +51,30 @@ window.MTProgress = (function(){
     write(data);
   }
 
+  function getRunCoins(){
+    try{ return Math.max(0, parseInt(localStorage.getItem(RUN_COINS_KEY) || "0", 10) || 0); }catch(e){ return 0; }
+  }
+
+  function addRunCoins(n){
+    const add = Math.max(0, n | 0);
+    if(!add) return getRunCoins();
+    const next = getRunCoins() + add;
+    try{ localStorage.setItem(RUN_COINS_KEY, String(next)); }catch(e){}
+    return next;
+  }
+
+  function resetRunCoins(){
+    try{ localStorage.setItem(RUN_COINS_KEY, "0"); }catch(e){}
+  }
+
+  function setCeoName(name){
+    try{ localStorage.setItem(CEO_NAME_KEY, String(name || "").trim().slice(0, 12)); }catch(e){}
+  }
+
+  function getCeoName(){
+    try{ return localStorage.getItem(CEO_NAME_KEY) || ""; }catch(e){ return ""; }
+  }
+
   function levelUrl(id, fromRoot){
     const lv = LEVELS.find(l => l.id === id);
     if(!lv) return fromRoot ? "index.html" : "../index.html";
@@ -93,6 +119,7 @@ window.MTProgress = (function(){
 
   return {
     LEVELS, TOTAL, read, write, isUnlocked, isCompleted,
-    completeLevel, levelUrl, guardLevel, renderProgressHtml, renderRecord
+    completeLevel, levelUrl, guardLevel, renderProgressHtml, renderRecord,
+    getRunCoins, addRunCoins, resetRunCoins, setCeoName, getCeoName
   };
 })();

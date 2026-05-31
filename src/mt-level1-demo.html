@@ -95,6 +95,7 @@
 <script src="mt-level-progress.js"></script>
 <script src="mt-game-analytics.js"></script>
 <script src="mt-game-bgm.js"></script>
+<script src="mt-leaderboard.js"></script>
 <script src="mt-game-ui.js"></script>
 <script>
 const cv=document.getElementById("cv"), ctx=cv.getContext("2d");
@@ -319,6 +320,7 @@ function respawnPlayer(){
 }
 
 function resetGame(){
+  if(window.MTProgress) MTProgress.resetRunCoins();
   player.x=80; player.y=GROUND-player.h; player.vx=0; player.vy=0;
   player.onGround=true; player.facing=1; player.crouch=false;
   lives=MAX_LIVES; score=0; won=false; dead=false; shakeT=0; splashT=0;

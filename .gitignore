@@ -5,3 +5,4 @@
 node_modules/
 data/analytics.jsonl
 data/*.jsonl
+data/leaderboard.json

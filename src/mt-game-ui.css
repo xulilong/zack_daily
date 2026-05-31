@@ -84,6 +84,18 @@
 .collect-item.done .ci-icon{opacity:1;}
 .collect-item.flash{animation:collectPop .45s ease;}
 @keyframes collectPop{40%{transform:scale(1.06);}}
+.lb-empty{color:var(--muted);font-size:13px;line-height:1.65;text-align:center;padding:8px 0;}
+.lb-run{font-size:12px;color:var(--muted);text-align:center;margin-bottom:10px;line-height:1.5;}
+.lb-run strong{color:var(--ink);font-weight:800;}
+.lb-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;max-height:280px;overflow:auto;}
+.lb-item{
+  display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;
+  background:var(--cream);border:1.5px solid rgba(37,37,37,.12);font-size:13px;
+}
+.lb-item.mine{border-color:var(--accent);background:#fff8f0;box-shadow:0 0 0 1px rgba(201,149,106,.2);}
+.lb-rank{flex:0 0 28px;text-align:center;font-weight:800;font-size:14px;}
+.lb-name{flex:1;min-width:0;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.lb-score{flex:0 0 auto;font-weight:800;color:#8a5a28;font-size:12px;white-space:nowrap;}
 @media (max-width:640px){
   .game-header .title{font-size:13px;}
   .game-header .hint{font-size:11px;}

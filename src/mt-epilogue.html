@@ -263,7 +263,9 @@
   </div>
 </div>
 
+<script src="mt-level-progress.js"></script>
 <script src="mt-game-analytics.js"></script>
+<script src="mt-leaderboard.js"></script>
 <script>
 let STEPS=[];
 let ceoName="";
@@ -371,6 +373,11 @@ function applyStep(s, instant){
     panel.classList.add("show");
     done=true;
     if(window.MTAnalytics) MTAnalytics.track("epilogue_complete");
+    if(window.MTProgress && window.MTLeaderboard){
+      MTLeaderboard.submit(MTProgress.getCeoName(), MTProgress.getRunCoins()).then(res => {
+        if(res && res.ok) MTProgress.resetRunCoins();
+      });
+    }
     return;
   }
 
@@ -410,6 +417,7 @@ function nextStep(instant){
 
 function startStory(name){
   ceoName=name;
+  if(window.MTProgress) MTProgress.setCeoName(name);
   STEPS=buildSteps(name);
   storyStarted=true;
   ceremonyForm.classList.add("hide");

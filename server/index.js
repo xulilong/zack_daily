@@ -6,6 +6,7 @@ const crypto = require("crypto");
 const ROOT = path.join(__dirname, "..");
 const DATA_DIR = path.join(ROOT, "data");
 const EVENTS_FILE = path.join(DATA_DIR, "analytics.jsonl");
+const LEADERBOARD_FILE = path.join(DATA_DIR, "leaderboard.json");
 const PORT = Number(process.env.PORT) || 3000;
 const HOST = process.env.HOST || "0.0.0.0";
 
@@ -34,6 +35,53 @@ function readEvents(){
 function appendEvent(event){
   ensureDataDir();
   fs.appendFileSync(EVENTS_FILE, JSON.stringify(event) + "\n", "utf8");
+}
+
+function readLeaderboard(){
+  ensureDataDir();
+  if(!fs.existsSync(LEADERBOARD_FILE)) return [];
+  try{
+    const list = JSON.parse(fs.readFileSync(LEADERBOARD_FILE, "utf8"));
+    return Array.isArray(list) ? list : [];
+  }catch(e){
+    return [];
+  }
+}
+
+function writeLeaderboard(list){
+  ensureDataDir();
+  fs.writeFileSync(LEADERBOARD_FILE, JSON.stringify(list, null, 2), "utf8");
+}
+
+function submitLeaderboardEntry(name, score, visitorId){
+  name = String(name || "").trim().slice(0, 12);
+  score = Math.max(0, parseInt(score, 10) || 0);
+  if(!name || score <= 0) return null;
+
+  const list = readLeaderboard();
+  let entry = list.find(item => item.name === name);
+  const now = new Date().toISOString();
+
+  if(entry){
+    if(score > entry.score){
+      entry.score = score;
+      entry.updatedAt = now;
+      if(visitorId) entry.visitorId = visitorId;
+    }
+  } else {
+    entry = {
+      id: crypto.randomUUID(),
+      name,
+      score,
+      updatedAt: now,
+      visitorId: visitorId || null
+    };
+    list.push(entry);
+  }
+
+  list.sort((a, b) => b.score - a.score || String(b.updatedAt).localeCompare(String(a.updatedAt)));
+  writeLeaderboard(list.slice(0, 100));
+  return list.slice(0, 100);
 }
 
 function aggregateStats(events){
@@ -113,7 +161,7 @@ function aggregateStats(events){
 const app = express();
 
 app.use((req, res, next) => {
-  if(req.path.startsWith("/api/analytics")){
+  if(req.path.startsWith("/api/analytics") || req.path.startsWith("/api/leaderboard")){
     res.setHeader("Access-Control-Allow-Origin", process.env.CORS_ORIGIN || "*");
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -161,6 +209,29 @@ app.get("/api/analytics/stats", (_req, res) => {
 
 app.get("/api/analytics/health", (_req, res) => {
   res.json({ ok: true, eventsFile: path.basename(EVENTS_FILE) });
+});
+
+app.get("/api/leaderboard", (req, res) => {
+  try{
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit, 10) || 20));
+    const list = readLeaderboard().slice(0, limit);
+    res.json({ ok: true, data: list });
+  }catch(err){
+    console.error("[leaderboard] read failed:", err);
+    res.status(500).json({ ok: false, error: "read failed" });
+  }
+});
+
+app.post("/api/leaderboard/submit", (req, res) => {
+  try{
+    const body = req.body || {};
+    const list = submitLeaderboardEntry(body.name, body.score, body.visitorId);
+    if(!list) return res.status(400).json({ ok: false, error: "name and score required" });
+    res.json({ ok: true, data: list.slice(0, 20) });
+  }catch(err){
+    console.error("[leaderboard] submit failed:", err);
+    res.status(500).json({ ok: false, error: "write failed" });
+  }
 });
 
 app.use(express.static(ROOT));

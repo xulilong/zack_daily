@@ -123,12 +123,95 @@ window.MTUI = (function(){
     hideOverlay();
     overlayRestore = null;
     track("level_retry");
+    if(opts.levelId === 1 && window.MTProgress) MTProgress.resetRunCoins();
     if(typeof opts.onRetry === "function") opts.onRetry();
   }
 
   function goHome(){
     track("home_click", { from: "level" });
     location.href = opts.homeUrl || "../index.html";
+  }
+
+  function syncBgmBtn(){
+    const btn = $("btn_bgm");
+    if(!btn || !window.MTBGM) return;
+    const on = MTBGM.isBgmOn();
+    btn.textContent = on ? "🎵" : "🔕";
+    btn.classList.toggle("muted", !on);
+    btn.setAttribute("aria-label", on ? "关闭背景音乐" : "开启背景音乐");
+  }
+
+  function toggleMute(){
+    if(typeof opts.toggleSound === "function"){
+      const on = opts.toggleSound();
+      const btn = $("btn_mute");
+      if(btn){
+        btn.textContent = on ? "🔊" : "🔇";
+        btn.classList.toggle("muted", !on);
+        btn.setAttribute("aria-label", on ? "关闭声音" : "开启声音");
+      }
+      toast(on ? "声音已开" : "声音已关", 900);
+    }
+  }
+
+  function ensureRankBtn(){
+    let btn = $("btn_rank");
+    if(btn) return btn;
+    const tools = document.querySelector(".head-tools");
+    if(!tools) return null;
+    btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "tb";
+    btn.id = "btn_rank";
+    btn.setAttribute("aria-label", "排行榜");
+    btn.textContent = "🏆";
+    tools.appendChild(btn);
+    btn.addEventListener("click", showLeaderboard);
+    return btn;
+  }
+
+  function showLeaderboard(){
+    const savedRestore = overlayRestore;
+    const shouldResumeOnClose = started && !paused && !(opts.isTerminal && opts.isTerminal());
+    if(shouldResumeOnClose){
+      paused = true;
+      syncPauseBtn();
+    }
+
+    const myName = window.MTProgress ? MTProgress.getCeoName() : "";
+    const runCoins = window.MTProgress ? MTProgress.getRunCoins() : 0;
+    const loading = '<p class="lb-empty">加载排行榜…</p>';
+
+    showModal({
+      tag: "CEO 榜",
+      title: "MT币排行榜",
+      body: loading,
+      actions: [{
+        id: "close",
+        label: "关闭",
+        kind: "btn-primary",
+        onClick(){
+          hideOverlay();
+          if(shouldResumeOnClose) resume();
+          else if(typeof savedRestore === "function") savedRestore();
+        }
+      }]
+    });
+
+    if(!window.MTLeaderboard){
+      const modal = $("modal");
+      if(modal){
+        const bodyEl = modal.querySelector(".modal-body");
+        if(bodyEl) bodyEl.innerHTML = '<p class="lb-empty">排行榜模块未加载。</p>';
+      }
+      return;
+    }
+
+    MTLeaderboard.fetchList(20).then(list => {
+      const modal = $("modal");
+      if(!modal || !modal.querySelector(".modal-body")) return;
+      modal.querySelector(".modal-body").innerHTML = MTLeaderboard.renderHtml(list, { myName, runCoins });
+    });
   }
 
   function showLevelProgress(){
@@ -156,28 +239,6 @@ window.MTUI = (function(){
         }
       }]
     });
-  }
-
-  function syncBgmBtn(){
-    const btn = $("btn_bgm");
-    if(!btn || !window.MTBGM) return;
-    const on = MTBGM.isBgmOn();
-    btn.textContent = on ? "🎵" : "🔕";
-    btn.classList.toggle("muted", !on);
-    btn.setAttribute("aria-label", on ? "关闭背景音乐" : "开启背景音乐");
-  }
-
-  function toggleMute(){
-    if(typeof opts.toggleSound === "function"){
-      const on = opts.toggleSound();
-      const btn = $("btn_mute");
-      if(btn){
-        btn.textContent = on ? "🔊" : "🔇";
-        btn.classList.toggle("muted", !on);
-        btn.setAttribute("aria-label", on ? "关闭声音" : "开启声音");
-      }
-      toast(on ? "声音已开" : "声音已关", 900);
-    }
   }
 
   function toggleBgm(){
@@ -387,6 +448,8 @@ window.MTUI = (function(){
     started = false;
     if(cfg.levelId && window.MTProgress){
       MTProgress.completeLevel(cfg.levelId);
+      const st = sessionStats();
+      MTProgress.addRunCoins(st.score | 0);
     }
     track("level_win", sessionStats());
     const actions = [{ id: "retry", label: "再玩一次", kind: "btn-secondary", onClick: retry }];
@@ -473,6 +536,7 @@ window.MTUI = (function(){
     if(muteBtn) muteBtn.addEventListener("click", toggleMute);
     if(bgmBtn) bgmBtn.addEventListener("click", toggleBgm);
     if(levelsBtn) levelsBtn.addEventListener("click", showLevelProgress);
+    ensureRankBtn();
     syncBgmBtn();
     document.addEventListener("visibilitychange", () => {
       if(document.hidden && started && !(opts.isTerminal && opts.isTerminal())){

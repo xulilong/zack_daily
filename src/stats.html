@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MT大冒险 · 数据统计</title>
+<style>
+  :root{
+    --ink:#252525;--paper:#faf8f4;--cream:#fffdf9;--muted:#7a756c;
+    --accent:#c9956a;--good:#2d8650;--bad:#b04a4a;
+    --shadow:0 4px 0 rgba(37,37,37,.18);--r:14px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    font-family:"PingFang SC","Helvetica Neue","Microsoft YaHei",sans-serif;
+    background:radial-gradient(ellipse at 50% 0%,#f8f4ee 0%,#ece7de 70%);
+    color:var(--ink);padding:24px 16px 40px;min-height:100vh;
+  }
+  .wrap{max-width:960px;margin:0 auto;display:flex;flex-direction:column;gap:16px;}
+  .head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+  h1{font-size:22px;font-weight:800;}
+  .sub{font-size:13px;color:var(--muted);margin-top:4px;}
+  .actions{display:flex;gap:8px;flex-wrap:wrap;}
+  .btn{
+    padding:8px 14px;border:2px solid var(--ink);border-radius:10px;
+    background:var(--cream);font:inherit;font-weight:700;cursor:pointer;
+    box-shadow:0 3px 0 var(--ink);text-decoration:none;color:var(--ink);font-size:13px;
+  }
+  .btn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink);}
+  .btn-primary{background:var(--accent);color:#fff;}
+  .card{
+    background:var(--cream);border:2px solid var(--ink);border-radius:var(--r);
+    box-shadow:var(--shadow);padding:18px 20px;
+  }
+  .card h2{font-size:15px;margin-bottom:12px;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;}
+  .stat{
+    background:var(--paper);border:1.5px solid rgba(37,37,37,.15);
+    border-radius:12px;padding:12px 14px;
+  }
+  .stat .lbl{font-size:11px;color:var(--muted);font-weight:600;}
+  .stat .val{font-size:24px;font-weight:800;margin-top:4px;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th,td{padding:10px 8px;text-align:left;border-bottom:1px solid rgba(37,37,37,.1);}
+  th{font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.04em;}
+  .rate-good{color:var(--good);font-weight:700;}
+  .rate-bad{color:var(--bad);font-weight:700;}
+  .empty{padding:24px;text-align:center;color:var(--muted);font-size:14px;line-height:1.7;}
+  .err{color:var(--bad);font-size:13px;line-height:1.6;}
+  .recent{font-size:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}
+  .recent td{vertical-align:top;}
+  .tag{
+    display:inline-block;padding:2px 8px;border-radius:999px;
+    background:var(--paper);border:1px solid rgba(37,37,37,.15);font-size:11px;
+  }
+  .foot{font-size:11px;color:var(--muted);text-align:center;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <div>
+      <h1>MT大冒险 · 数据统计</h1>
+      <p class="sub" id="meta">加载中…</p>
+    </div>
+    <div class="actions">
+      <button type="button" class="btn" id="btn_refresh">刷新</button>
+      <a class="btn" href="../index.html">回首页</a>
+    </div>
+  </div>
+
+  <div class="card" id="panel_summary">
+    <h2>总览</h2>
+    <div class="grid" id="summary_grid"></div>
+  </div>
+
+  <div class="card" id="panel_levels">
+    <h2>关卡数据</h2>
+    <div id="levels_table_wrap"></div>
+  </div>
+
+  <div class="card" id="panel_events">
+    <h2>事件排行</h2>
+    <div id="events_table_wrap"></div>
+  </div>
+
+  <div class="card" id="panel_recent">
+    <h2>最近事件</h2>
+    <div id="recent_table_wrap"></div>
+  </div>
+
+  <p class="foot">数据文件：<code>data/analytics.jsonl</code> · 本地开发：<code>npm start</code> · 线上：<a href="https://render.com" target="_blank" rel="noopener">Render</a></p>
+</div>
+
+<script>
+const API = (location.protocol === "http:" || location.protocol === "https:")
+  ? location.origin + "/api/analytics/stats"
+  : "http://localhost:3000/api/analytics/stats";
+
+function fmtTime(iso){
+  if(!iso) return "-";
+  const d = new Date(iso);
+  return d.toLocaleString("zh-CN", { hour12: false });
+}
+
+function pct(n){
+  return (n * 100).toFixed(1) + "%";
+}
+
+function renderSummary(data){
+  const t = data.totals || {};
+  document.getElementById("summary_grid").innerHTML = [
+    ["事件总数", t.events || 0],
+    ["会话数", t.sessions || 0],
+    ["访客数", t.visitors || 0],
+    ["页面浏览", t.pageViews || 0]
+  ].map(([lbl, val]) =>
+    `<div class="stat"><div class="lbl">${lbl}</div><div class="val">${val}</div></div>`
+  ).join("");
+}
+
+function renderLevels(levels){
+  const wrap = document.getElementById("levels_table_wrap");
+  if(!levels || !levels.length){
+    wrap.innerHTML = '<div class="empty">暂无关卡数据</div>';
+    return;
+  }
+  wrap.innerHTML = `<table>
+    <thead><tr>
+      <th>关卡</th><th>开始</th><th>通关</th><th>失败</th><th>重试</th><th>续命</th><th>通关率</th>
+    </tr></thead>
+    <tbody>${levels.map(lv => `<tr>
+      <td><strong>${lv.levelId}</strong> ${lv.name}</td>
+      <td>${lv.starts}</td>
+      <td>${lv.wins}</td>
+      <td>${lv.fails}</td>
+      <td>${lv.retries}</td>
+      <td>${lv.coinContinues}</td>
+      <td class="${lv.winRate >= 0.5 ? "rate-good" : "rate-bad"}">${pct(lv.winRate || 0)}</td>
+    </tr>`).join("")}</tbody>
+  </table>`;
+}
+
+function renderTopEvents(list){
+  const wrap = document.getElementById("events_table_wrap");
+  if(!list || !list.length){
+    wrap.innerHTML = '<div class="empty">暂无事件</div>';
+    return;
+  }
+  wrap.innerHTML = `<table>
+    <thead><tr><th>事件</th><th>次数</th></tr></thead>
+    <tbody>${list.map(item => `<tr><td><span class="tag">${item.event}</span></td><td>${item.count}</td></tr>`).join("")}</tbody>
+  </table>`;
+}
+
+function renderRecent(list){
+  const wrap = document.getElementById("recent_table_wrap");
+  if(!list || !list.length){
+    wrap.innerHTML = '<div class="empty">暂无最近事件</div>';
+    return;
+  }
+  wrap.innerHTML = `<table class="recent">
+    <thead><tr><th>时间</th><th>事件</th><th>页面</th><th>关卡</th><th>详情</th></tr></thead>
+    <tbody>${list.slice(0, 30).map(ev => {
+      const props = ev.props && Object.keys(ev.props).length
+        ? JSON.stringify(ev.props)
+        : "-";
+      return `<tr>
+        <td>${fmtTime(ev.ts)}</td>
+        <td>${ev.event}</td>
+        <td>${ev.page || "-"}</td>
+        <td>${ev.levelId ?? "-"}</td>
+        <td>${props}</td>
+      </tr>`;
+    }).join("")}</tbody>
+  </table>`;
+}
+
+async function loadStats(){
+  const meta = document.getElementById("meta");
+  try{
+    const res = await fetch(API);
+    const json = await res.json();
+    if(!json.ok) throw new Error(json.error || "接口错误");
+    const data = json.data;
+    meta.textContent = `更新于 ${fmtTime(data.generatedAt)}`;
+    renderSummary(data);
+    renderLevels(data.levels);
+    renderTopEvents(data.topEvents);
+    renderRecent(data.recent);
+  }catch(err){
+    meta.innerHTML = `<span class="err">无法加载统计数据。请先运行 <code>npm install && npm start</code>，再访问 <code>http://localhost:3000/src/stats.html</code><br>${err.message}</span>`;
+    ["summary_grid","levels_table_wrap","events_table_wrap","recent_table_wrap"].forEach(id => {
+      const el = document.getElementById(id);
+      if(el) el.innerHTML = "";
+    });
+  }
+}
+
+document.getElementById("btn_refresh").addEventListener("click", loadStats);
+loadStats();
+</script>
+</body>
+</html>

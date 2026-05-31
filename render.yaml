@@ -1,0 +1,14 @@
+# Render Blueprint · https://render.com/docs/blueprint-spec
+# Dashboard: New → Blueprint → 连接 GitHub 仓库 → 使用此文件自动创建服务
+services:
+  - type: web
+    name: zack-game
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/analytics/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production

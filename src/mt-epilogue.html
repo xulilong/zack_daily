@@ -263,6 +263,7 @@
   </div>
 </div>
 
+<script src="mt-game-analytics.js"></script>
 <script>
 let STEPS=[];
 let ceoName="";
@@ -369,6 +370,7 @@ function applyStep(s, instant){
     panel.classList.remove("instant");
     panel.classList.add("show");
     done=true;
+    if(window.MTAnalytics) MTAnalytics.track("epilogue_complete");
     return;
   }
 
@@ -417,6 +419,7 @@ function startStory(name){
   document.title="MT大冒险 · 就职与梦醒";
   new Image().src="../assets/images/index.png";
   stepIdx=-1;
+  if(window.MTAnalytics) MTAnalytics.track("epilogue_start", { name });
   nextStep(true);
 }
 
@@ -428,6 +431,7 @@ function skipToEnd(){
   badge.classList.remove("show","fade-out");
   ceremonyScreen.classList.add("hide");
   page.classList.add("dream","show");
+  if(window.MTAnalytics) MTAnalytics.track("epilogue_skip");
   nextStep();
 }
 
@@ -455,11 +459,17 @@ page.addEventListener("click",(e)=>{
 });
 btnSkip.addEventListener("click",(e)=>{ e.stopPropagation(); skipToEnd(); });
 document.getElementById("btnWork").addEventListener("click",(e)=>{
-  e.stopPropagation(); location.href="../index.html";
+  e.stopPropagation();
+  if(window.MTAnalytics) MTAnalytics.track("epilogue_btn_work");
+  location.href="../index.html";
 });
 document.getElementById("btnSleep").addEventListener("click",(e)=>{
-  e.stopPropagation(); location.href="mt-level1-demo.html";
+  e.stopPropagation();
+  if(window.MTAnalytics) MTAnalytics.track("epilogue_btn_sleep");
+  location.href="mt-level1-demo.html";
 });
+
+if(window.MTAnalytics) MTAnalytics.init({ page: "mt-epilogue.html" });
 
 ceoNameInput.focus();
 </script>

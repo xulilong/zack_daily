@@ -121,6 +121,7 @@
 </div>
 
 <script src="mt-level-progress.js"></script>
+<script src="mt-game-analytics.js"></script>
 <script src="mt-game-bgm.js"></script>
 <script src="mt-game-ui.js"></script>
 <script>
@@ -1828,6 +1829,7 @@ MTUI.init({
   startBtn:"进去讲",
   ensureAudio,
   toggleSound(){ soundOn=!soundOn; if(window.MTBGM) MTBGM.setSoundOn(soundOn); return soundOn; },
+  getSessionStats(){ return { score, livesLeft: lives }; },
   isTerminal(){ return won||lives<=0; },
   onBeforeStart(){ resetGame(); },
   onRetry(){ resetGame(); },

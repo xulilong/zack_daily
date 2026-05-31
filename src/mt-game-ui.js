@@ -9,6 +9,23 @@ window.MTUI = (function(){
   let collectDefs = [];
   let collectState = {};
   let collectPrev = {};
+  let levelStartTs = 0;
+
+  function track(event, props){
+    if(!window.MTAnalytics) return;
+    MTAnalytics.track(event, {
+      levelId: opts.levelId ?? null,
+      ...(props || {})
+    });
+  }
+
+  function sessionStats(){
+    const extra = typeof opts.getSessionStats === "function" ? opts.getSessionStats() : {};
+    return {
+      ...extra,
+      durationMs: levelStartTs ? Date.now() - levelStartTs : 0
+    };
+  }
 
   function $(id){ return document.getElementById(id); }
 
@@ -65,11 +82,14 @@ window.MTUI = (function(){
     overlayRestore = null;
     syncPauseBtn();
     if(typeof opts.ensureAudio === "function") opts.ensureAudio();
+    levelStartTs = Date.now();
+    track("level_start");
   }
 
   function showPauseMenu(){
     paused = true;
     syncPauseBtn();
+    track("pause_open");
     overlayRestore = showPauseMenu;
     showModal({
       tag: "暂停",
@@ -102,10 +122,12 @@ window.MTUI = (function(){
     syncPauseBtn();
     hideOverlay();
     overlayRestore = null;
+    track("level_retry");
     if(typeof opts.onRetry === "function") opts.onRetry();
   }
 
   function goHome(){
+    track("home_click", { from: "level" });
     location.href = opts.homeUrl || "../index.html";
   }
 
@@ -297,6 +319,7 @@ window.MTUI = (function(){
 
   function showGameOver(cfg){
     started = false;
+    track("level_fail", sessionStats());
     overlayRestore = () => showGameOver(cfg);
     showModal({
       tag: cfg.tag || "失败",
@@ -346,6 +369,7 @@ window.MTUI = (function(){
             paused = false;
             syncPauseBtn();
             overlayRestore = null;
+            track("coin_continue", { cost, score: cfg.score|0 });
             if(typeof cfg.onRevive === "function") cfg.onRevive(cost);
           }
         },
@@ -364,10 +388,14 @@ window.MTUI = (function(){
     if(cfg.levelId && window.MTProgress){
       MTProgress.completeLevel(cfg.levelId);
     }
+    track("level_win", sessionStats());
     const actions = [{ id: "retry", label: "再玩一次", kind: "btn-secondary", onClick: retry }];
     if(cfg.nextUrl){
       actions.unshift({ id: "next", label: cfg.nextLabel || "下一关", kind: "btn-primary",
-        onClick(){ location.href = cfg.nextUrl; } });
+        onClick(){
+          track("next_level_click", { nextUrl: cfg.nextUrl });
+          location.href = cfg.nextUrl;
+        } });
     }
     actions.push({ id: "home", label: "回首页", kind: "btn-ghost", onClick: goHome });
     overlayRestore = () => showWin(cfg);
@@ -454,6 +482,9 @@ window.MTUI = (function(){
     });
     if(typeof opts.onInit === "function") opts.onInit();
     setupCollectibles(opts.collectibles);
+    if(window.MTAnalytics){
+      MTAnalytics.init({ page: location.pathname.split("/").pop(), levelId: opts.levelId || null });
+    }
     showStart();
   }
 
@@ -462,6 +493,7 @@ window.MTUI = (function(){
     isStarted(){ return started; },
     syncKeys, updateProgress, updateHint, updateLives, toast,
     updateCollectibles, resetCollectibles,
-    showGameOver, showWin, hideOverlay, ensureStart, retry, goHome, tryCoinContinue
+    showGameOver, showWin, hideOverlay, ensureStart, retry, goHome, tryCoinContinue,
+    track
   };
 })();

@@ -110,8 +110,19 @@
       <p class="hint">班上多了，会有什么副作用？<br>容易产生幻想！！！<br>打工人的幻想之——假如我是CEO。</p>
       <button class="btn-start" type="button" onclick="location.href='src/mt-level1-demo.html'">开启CEO的冒险</button>
       <button class="btn-preview" type="button" onclick="location.href='src/mt-epilogue.html'">直接体验 · CEO就职</button>
+      <a class="btn-preview" href="src/stats.html" style="text-decoration:none;margin-top:2px;">数据统计</a>
     </div>
   </div>
 </div>
+<script src="src/mt-game-analytics.js"></script>
+<script>
+MTAnalytics.init({ page: "index" });
+document.querySelector(".btn-start")?.addEventListener("click", () => {
+  MTAnalytics.track("home_start_click");
+});
+document.querySelector(".btn-preview")?.addEventListener("click", () => {
+  MTAnalytics.track("home_preview_click");
+});
+</script>
 </body>
 </html>

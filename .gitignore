@@ -2,3 +2,6 @@
 *.bak.html
 *.tmp.html
 .cursor/
+node_modules/
+data/analytics.jsonl
+data/*.jsonl

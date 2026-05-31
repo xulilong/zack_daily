@@ -1,0 +1,16 @@
+{
+  "name": "zack-game",
+  "version": "1.0.0",
+  "private": true,
+  "description": "MT大冒险 · 游戏与统计后端",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node server/index.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}

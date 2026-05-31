@@ -58,6 +58,7 @@
       </div>
       <div class="head-tools">
         <button type="button" class="tb" id="btn_mute" aria-label="声音">🔊</button>
+        <button type="button" class="tb" id="btn_bgm" aria-label="背景音乐">🎵</button>
         <button type="button" class="tb" id="btn_pause" aria-label="暂停">⏸</button>
         <button type="button" class="tb" id="btn_levels" aria-label="关卡进度">☷</button>
       </div>
@@ -93,6 +94,7 @@
 </div>
 
 <script src="mt-level-progress.js"></script>
+<script src="mt-game-bgm.js"></script>
 <script src="mt-game-ui.js"></script>
 <script>
 const cv=document.getElementById("cv"), ctx=cv.getContext("2d");
@@ -102,7 +104,8 @@ const INK="#252525", PAPER="#faf8f4", SIDE="#e4e2dc", SIDE2="#d8d5ce", SKY="#ebe
 /* ===== 音效 ===== */
 let actx=null, soundOn=true;
 function ensureAudio(){ if(!actx){ try{ actx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} }
-  if(actx&&actx.state==="suspended") actx.resume(); }
+  if(actx&&actx.state==="suspended") actx.resume();
+  if(window.MTBGM) MTBGM.attach(actx); }
 function tone(f,dur,type="square",vol=0.18,slideTo=null){
   if(!actx||!soundOn) return;
   const t=actx.currentTime,o=actx.createOscillator(),g=actx.createGain();
@@ -1307,7 +1310,7 @@ MTUI.init({
   startBody:"键盘或屏幕按钮操作。<br>闸机要停稳 · 电梯等门开 · <kbd>Esc</kbd> 暂停",
   startBtn:"打卡上班",
   ensureAudio,
-  toggleSound(){ soundOn=!soundOn; return soundOn; },
+  toggleSound(){ soundOn=!soundOn; if(window.MTBGM) MTBGM.setSoundOn(soundOn); return soundOn; },
   isTerminal(){ return won||lives<=0; },
   onBeforeStart(){ resetGame(); },
   onRetry(){ resetGame(); },

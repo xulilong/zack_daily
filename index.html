@@ -73,6 +73,20 @@
     box-shadow:0 2px 0 var(--btn-shadow),0 8px 16px rgba(0,0,0,.22);
   }
 
+  .btn-preview{
+    display:inline-flex;align-items:center;justify-content:center;
+    margin-top:4px;padding:10px 20px;
+    border:1px solid rgba(255,255,255,.18);border-radius:999px;
+    background:rgba(255,255,255,.06);cursor:pointer;
+    color:rgba(244,246,248,.72);font-size:clamp(13px,2.4vw,14px);
+    font-weight:600;letter-spacing:.06em;font-family:inherit;
+    transition:background .15s ease,color .15s ease,border-color .15s ease;
+  }
+  .btn-preview:hover{
+    background:rgba(255,255,255,.1);color:var(--text);
+    border-color:rgba(255,255,255,.28);
+  }
+
   @keyframes fadeUp{
     from{opacity:0;transform:translateY(24px);}
     to{opacity:1;transform:translateY(0);}
@@ -95,6 +109,7 @@
     <div class="panel">
       <p class="hint">班上多了，会有什么副作用？<br>容易产生幻想！！！<br>打工人的幻想之——假如我是CEO。</p>
       <button class="btn-start" type="button" onclick="location.href='src/mt-level1-demo.html'">开启CEO的冒险</button>
+      <button class="btn-preview" type="button" onclick="location.href='src/mt-epilogue.html'">直接体验 · CEO就职</button>
     </div>
   </div>
 </div>

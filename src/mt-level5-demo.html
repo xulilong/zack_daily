@@ -59,6 +59,7 @@
       </div>
       <div class="head-tools">
         <button type="button" class="tb" id="btn_mute" aria-label="声音">🔊</button>
+        <button type="button" class="tb" id="btn_bgm" aria-label="背景音乐">🎵</button>
         <button type="button" class="tb" id="btn_pause" aria-label="暂停">⏸</button>
         <button type="button" class="tb" id="btn_levels" aria-label="关卡进度">☷</button>
       </div>
@@ -94,6 +95,7 @@
 </div>
 
 <script src="mt-level-progress.js"></script>
+<script src="mt-game-bgm.js"></script>
 <script src="mt-game-ui.js"></script>
 <script>
 const cv=document.getElementById("cv"), ctx=cv.getContext("2d");
@@ -103,7 +105,8 @@ const INK="#252525", PAPER="#faf8f4", SIDE="#e8e4dc", SIDE2="#ddd8cf", SKY="#f2e
 /* ===== 音效 ===== */
 let actx=null, soundOn=true;
 function ensureAudio(){ if(!actx){ try{ actx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} }
-  if(actx&&actx.state==="suspended") actx.resume(); }
+  if(actx&&actx.state==="suspended") actx.resume();
+  if(window.MTBGM) MTBGM.attach(actx); }
 function tone(f,dur,type="square",vol=0.18,slideTo=null){
   if(!actx||!soundOn) return;
   const t=actx.currentTime,o=actx.createOscillator(),g=actx.createGain();
@@ -187,7 +190,9 @@ const ents=[
   {type:"coin",x:6900,y:GROUND-28,w:22,h:22},
 ];
 
-const bgSlots=[];
+const bgSlots=[
+  {id:"bg_5_1_sky", x:0, y:0, w:WORLD_W, h:180},
+];
 
 const signSlots=[
   {id:"ui_sign_office", x:1520, y:GROUND-118, w:88, h:48, poleX:1564, label:"CEO办公室"},
@@ -1146,10 +1151,18 @@ function drawBackground(){
 
   ctx.save(); ctx.translate(-camX,0);
 
-  // 办公室天花板灯带
-  ctx.fillStyle="rgba(255,255,255,.35)"; ctx.strokeStyle="rgba(37,37,37,.08)"; ctx.lineWidth=1;
-  for(let x=120;x<WORLD_W;x+=280){
-    rrect(x,28,180,14,4); ctx.fill(); ctx.stroke();
+  const skyImg=bgImages.bg_5_1_sky;
+  if(skyImg){
+    ctx.drawImage(skyImg,0,0,WORLD_W,180);
+    const fade=ctx.createLinearGradient(0,140,0,200);
+    fade.addColorStop(0,"rgba(242,235,227,0)"); fade.addColorStop(1,"rgba(242,235,227,.95)");
+    ctx.fillStyle=fade; ctx.fillRect(0,140,WORLD_W,70);
+  } else {
+    // 办公室天花板灯带（无背景图时的占位）
+    ctx.fillStyle="rgba(255,255,255,.35)"; ctx.strokeStyle="rgba(37,37,37,.08)"; ctx.lineWidth=1;
+    for(let x=120;x<WORLD_W;x+=280){
+      rrect(x,28,180,14,4); ctx.fill(); ctx.stroke();
+    }
   }
 
   ctx.fillStyle=SIDE; ctx.fillRect(0,GROUND,WORLD_W,100);
@@ -1561,7 +1574,7 @@ MTUI.init({
   startBody:"四段路线：前台领卡 → 推椅进办公室 → 推档案过闸机 → 董事会交文件落座。<br><kbd>Esc</kbd> 暂停",
   startBtn:"进入CEO办公室",
   ensureAudio,
-  toggleSound(){ soundOn=!soundOn; return soundOn; },
+  toggleSound(){ soundOn=!soundOn; if(window.MTBGM) MTBGM.setSoundOn(soundOn); return soundOn; },
   isTerminal(){ return won||lives<=0; },
   onBeforeStart(){ resetGame(); },
   onRetry(){ resetGame(); },

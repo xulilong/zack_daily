@@ -136,6 +136,15 @@ window.MTUI = (function(){
     });
   }
 
+  function syncBgmBtn(){
+    const btn = $("btn_bgm");
+    if(!btn || !window.MTBGM) return;
+    const on = MTBGM.isBgmOn();
+    btn.textContent = on ? "🎵" : "🔕";
+    btn.classList.toggle("muted", !on);
+    btn.setAttribute("aria-label", on ? "关闭背景音乐" : "开启背景音乐");
+  }
+
   function toggleMute(){
     if(typeof opts.toggleSound === "function"){
       const on = opts.toggleSound();
@@ -147,6 +156,14 @@ window.MTUI = (function(){
       }
       toast(on ? "声音已开" : "声音已关", 900);
     }
+  }
+
+  function toggleBgm(){
+    if(!window.MTBGM) return;
+    if(typeof opts.ensureAudio === "function") opts.ensureAudio();
+    const on = MTBGM.toggleBgm();
+    syncBgmBtn();
+    toast(on ? "背景音乐已开" : "背景音乐已关", 900);
   }
 
   function syncPauseBtn(){
@@ -421,11 +438,14 @@ window.MTUI = (function(){
     const homeBtn = $("btn_home");
     const pauseBtn = $("btn_pause");
     const muteBtn = $("btn_mute");
+    const bgmBtn = $("btn_bgm");
     const levelsBtn = $("btn_levels");
     if(homeBtn) homeBtn.addEventListener("click", goHome);
     if(pauseBtn) pauseBtn.addEventListener("click", togglePause);
     if(muteBtn) muteBtn.addEventListener("click", toggleMute);
+    if(bgmBtn) bgmBtn.addEventListener("click", toggleBgm);
     if(levelsBtn) levelsBtn.addEventListener("click", showLevelProgress);
+    syncBgmBtn();
     document.addEventListener("visibilitychange", () => {
       if(document.hidden && started && !(opts.isTerminal && opts.isTerminal())){
         paused = true;

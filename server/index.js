@@ -2,11 +2,9 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
+const storage = require("./storage");
 
 const ROOT = path.join(__dirname, "..");
-const DATA_DIR = path.join(ROOT, "data");
-const EVENTS_FILE = path.join(DATA_DIR, "analytics.jsonl");
-const LEADERBOARD_FILE = path.join(DATA_DIR, "leaderboard.json");
 const PORT = Number(process.env.PORT) || 3000;
 const HOST = process.env.HOST || "0.0.0.0";
 
@@ -18,47 +16,12 @@ const LEVEL_NAMES = {
   5: "CEO办公室"
 };
 
-function ensureDataDir(){
-  if(!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-}
-
-function readEvents(){
-  ensureDataDir();
-  if(!fs.existsSync(EVENTS_FILE)) return [];
-  const raw = fs.readFileSync(EVENTS_FILE, "utf8").trim();
-  if(!raw) return [];
-  return raw.split("\n").map(line => {
-    try{ return JSON.parse(line); }catch(e){ return null; }
-  }).filter(Boolean);
-}
-
-function appendEvent(event){
-  ensureDataDir();
-  fs.appendFileSync(EVENTS_FILE, JSON.stringify(event) + "\n", "utf8");
-}
-
-function readLeaderboard(){
-  ensureDataDir();
-  if(!fs.existsSync(LEADERBOARD_FILE)) return [];
-  try{
-    const list = JSON.parse(fs.readFileSync(LEADERBOARD_FILE, "utf8"));
-    return Array.isArray(list) ? list : [];
-  }catch(e){
-    return [];
-  }
-}
-
-function writeLeaderboard(list){
-  ensureDataDir();
-  fs.writeFileSync(LEADERBOARD_FILE, JSON.stringify(list, null, 2), "utf8");
-}
-
-function submitLeaderboardEntry(name, score, visitorId){
+async function submitLeaderboardEntry(name, score, visitorId){
   name = String(name || "").trim().slice(0, 12);
   score = Math.max(0, parseInt(score, 10) || 0);
   if(!name || score <= 0) return null;
 
-  const list = readLeaderboard();
+  const list = await storage.readLeaderboard();
   let entry = list.find(item => item.name === name);
   const now = new Date().toISOString();
 
@@ -80,8 +43,7 @@ function submitLeaderboardEntry(name, score, visitorId){
   }
 
   list.sort((a, b) => b.score - a.score || String(b.updatedAt).localeCompare(String(a.updatedAt)));
-  writeLeaderboard(list.slice(0, 100));
-  return list.slice(0, 100);
+  return storage.writeLeaderboard(list);
 }
 
 function aggregateStats(events){
@@ -172,7 +134,7 @@ app.use((req, res, next) => {
 
 app.use(express.json({ limit: "32kb" }));
 
-app.post("/api/analytics/track", (req, res) => {
+app.post("/api/analytics/track", async (req, res) => {
   try{
     const body = req.body || {};
     const eventName = String(body.event || "").trim();
@@ -189,7 +151,7 @@ app.post("/api/analytics/track", (req, res) => {
       props: body.props && typeof body.props === "object" ? body.props : {}
     };
 
-    appendEvent(event);
+    await storage.appendEvent(event);
     res.json({ ok: true, id: event.id });
   }catch(err){
     console.error("[analytics] track failed:", err);
@@ -197,9 +159,9 @@ app.post("/api/analytics/track", (req, res) => {
   }
 });
 
-app.get("/api/analytics/stats", (_req, res) => {
+app.get("/api/analytics/stats", async (_req, res) => {
   try{
-    const events = readEvents();
+    const events = await storage.readEvents();
     res.json({ ok: true, data: aggregateStats(events) });
   }catch(err){
     console.error("[analytics] stats failed:", err);
@@ -208,13 +170,19 @@ app.get("/api/analytics/stats", (_req, res) => {
 });
 
 app.get("/api/analytics/health", (_req, res) => {
-  res.json({ ok: true, eventsFile: path.basename(EVENTS_FILE) });
+  const paths = storage.getPaths();
+  res.json({
+    ok: true,
+    storage: storage.getBackend(),
+    persistent: storage.getBackend() === "redis",
+    eventsFile: path.basename(paths.eventsFile)
+  });
 });
 
-app.get("/api/leaderboard", (req, res) => {
+app.get("/api/leaderboard", async (req, res) => {
   try{
     const limit = Math.min(50, Math.max(1, parseInt(req.query.limit, 10) || 20));
-    const list = readLeaderboard().slice(0, limit);
+    const list = (await storage.readLeaderboard()).slice(0, limit);
     res.json({ ok: true, data: list });
   }catch(err){
     console.error("[leaderboard] read failed:", err);
@@ -222,10 +190,10 @@ app.get("/api/leaderboard", (req, res) => {
   }
 });
 
-app.post("/api/leaderboard/submit", (req, res) => {
+app.post("/api/leaderboard/submit", async (req, res) => {
   try{
     const body = req.body || {};
-    const list = submitLeaderboardEntry(body.name, body.score, body.visitorId);
+    const list = await submitLeaderboardEntry(body.name, body.score, body.visitorId);
     if(!list) return res.status(400).json({ ok: false, error: "name and score required" });
     res.json({ ok: true, data: list.slice(0, 20) });
   }catch(err){
@@ -243,11 +211,14 @@ app.get("*", (req, res, next) => {
   res.status(404).send("Not found");
 });
 
-ensureDataDir();
 app.listen(PORT, HOST, () => {
   const base = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
+  const paths = storage.getPaths();
   console.log(`MT大冒险 server listening on ${HOST}:${PORT}`);
+  console.log(`Storage: ${storage.getBackend()}${storage.getBackend() === "redis" ? " (persistent)" : " (local files, ephemeral on Render free)"}`);
   console.log(`Game:  ${base}/`);
   console.log(`Stats: ${base}/src/stats.html`);
-  console.log(`Analytics file: ${EVENTS_FILE}`);
+  if(storage.getBackend() === "file"){
+    console.log(`Data dir: ${paths.dataDir}`);
+  }
 });

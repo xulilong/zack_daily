@@ -12,3 +12,6 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      # 在 Render Dashboard 手动添加（Upstash 免费库 → REST API）：
+      # UPSTASH_REDIS_REST_URL
+      # UPSTASH_REDIS_REST_TOKEN

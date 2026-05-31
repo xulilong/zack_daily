@@ -1,0 +1,77 @@
+/* MT大冒险 · 共用游戏 UI */
+.game-header{display:flex;flex-direction:column;gap:8px;padding:10px 14px 8px;
+  background:var(--paper);border-bottom:2px solid var(--ink);}
+.head-main{display:flex;align-items:flex-start;gap:8px;width:100%;}
+.head-title{flex:1;min-width:0;}
+.game-header .title{font-size:14px;font-weight:800;color:var(--ink);letter-spacing:.04em;line-height:1.2;}
+.game-header .hint{font-size:12px;color:var(--muted);font-weight:500;line-height:1.35;margin-top:2px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color .25s,opacity .25s;}
+.game-header .hint.changed{color:var(--ink);opacity:1;}
+.head-tools{display:flex;gap:6px;flex:0 0 auto;}
+.head-bar{display:flex;align-items:center;gap:10px;width:100%;}
+.progress{flex:1;height:6px;background:rgba(37,37,37,.08);border-radius:999px;overflow:hidden;border:1px solid rgba(37,37,37,.1);}
+.progress-fill{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--gold));border-radius:999px;
+  transition:width .25s ease;}
+.game-header .stats{display:flex;gap:6px;flex:0 0 auto;flex-wrap:wrap;justify-content:flex-end;}
+.tb{width:36px;height:36px;padding:0;background:var(--cream);border:2px solid var(--ink);border-radius:10px;
+  color:var(--ink);font-size:15px;line-height:1;display:inline-flex;align-items:center;justify-content:center;
+  cursor:pointer;box-shadow:0 2px 0 var(--ink);transition:transform .05s,box-shadow .05s,background .15s;}
+.tb:active{transform:translateY(2px);box-shadow:0 0 0 var(--ink);}
+.tb.active{background:var(--accent);color:#fff;}
+.tb.muted{opacity:.55;}
+.lives-stat .hearts{letter-spacing:.06em;color:#c0392b;font-size:13px;}
+.stat.lives-stat.lost .hearts{animation:heartPop .35s ease;}
+@keyframes heartPop{50%{transform:scale(1.2);opacity:.5;}}
+.key.on{background:var(--accent);color:#fff;transform:translateY(2px);box-shadow:0 1px 0 var(--ink);}
+.key{touch-action:none;-webkit-touch-callout:none;}
+.overlay{backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);}
+.modal{max-width:340px;animation:modalIn .28s ease;}
+@keyframes modalIn{from{opacity:0;transform:translateY(10px) scale(.98);}to{opacity:1;transform:none;}}
+.modal .modal-tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.08em;
+  color:var(--muted);background:rgba(37,37,37,.06);padding:3px 10px;border-radius:999px;margin-bottom:10px;}
+.modal-body{color:var(--muted);font-size:13px;margin-bottom:16px;line-height:1.6;}
+.modal-actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:4px;}
+.modal .btn{min-width:108px;padding:10px 18px;border-radius:999px;font-size:13px;font-weight:700;cursor:pointer;
+  border:2px solid var(--ink);transition:transform .06s,box-shadow .06s,filter .12s;}
+.modal .btn:active{transform:translateY(2px);}
+.modal .btn-primary{background:var(--ink);color:var(--cream);box-shadow:0 3px 0 rgba(0,0,0,.22);}
+.modal .btn-secondary{background:var(--cream);color:var(--ink);box-shadow:0 3px 0 var(--ink);}
+.modal .btn-ghost{background:transparent;color:var(--muted);border-color:rgba(37,37,37,.2);box-shadow:none;}
+.modal em{font-style:normal;color:var(--ink);font-weight:600;}
+.modal small{display:block;margin-top:8px;font-size:11px;color:var(--muted);}
+.modal kbd{font-size:11px;padding:1px 6px;border:1px solid rgba(37,37,37,.22);border-radius:4px;background:#fff;font-family:inherit;}
+.toast{position:absolute;left:50%;top:14px;transform:translateX(-50%) translateY(-8px);
+  background:rgba(37,37,37,.88);color:#fff;font-size:12px;font-weight:700;padding:6px 14px;border-radius:999px;
+  opacity:0;pointer-events:none;z-index:15;transition:opacity .2s,transform .2s;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.stat.fx.tray{background:#fff8e6;border-color:#d4a060;color:#7a5820;}
+.level-progress-list{display:flex;flex-direction:column;gap:6px;text-align:left;margin:-4px 0 4px;}
+.level-progress-list .level-item{
+  display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;
+  font-size:13px;line-height:1.2;text-decoration:none;color:var(--ink);
+  border:1.5px solid rgba(37,37,37,.12);background:var(--cream);
+  transition:background .15s ease,opacity .15s ease,border-color .15s ease;
+}
+.level-progress-list a.level-item{cursor:pointer;}
+.level-progress-list a.level-item:hover{background:var(--paper);border-color:rgba(37,37,37,.22);}
+.level-progress-list .level-item.locked{opacity:.5;cursor:default;}
+.level-progress-list .level-item.completed{background:#eef9f0;border-color:rgba(46,153,89,.35);}
+.level-progress-list .level-item.unlocked:not(.completed){background:#fff;}
+.level-progress-list .level-item.current{border-color:var(--accent);box-shadow:0 0 0 1px rgba(201,149,106,.25);}
+.level-progress-list .level-num{
+  flex:0 0 20px;width:20px;height:20px;border-radius:999px;
+  display:inline-flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:800;background:rgba(37,37,37,.08);
+}
+.level-progress-list .level-item.completed .level-num{background:rgba(46,153,89,.18);color:#2d8650;}
+.level-progress-list .level-item.current .level-num{background:var(--accent);color:#fff;}
+.level-progress-list .level-name{flex:1;min-width:0;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.level-progress-list .level-status{flex:0 0 auto;font-size:12px;opacity:.85;}
+.level-progress-list .level-item.locked .level-status{font-size:11px;}
+@media (max-width:640px){
+  .game-header .title{font-size:13px;}
+  .game-header .hint{font-size:11px;}
+  .tb{width:34px;height:34px;font-size:14px;}
+  .key{width:52px;height:52px;font-size:20px;}
+  .key.run{width:48px;font-size:11px;}
+}

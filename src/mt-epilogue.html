@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>MT大冒险 · 梦醒了</title>
+<style>
+  :root{
+    --panel:rgba(18,32,48,.78);
+    --panel-border:rgba(255,255,255,.12);
+    --text:#f4f6f8;
+    --muted:rgba(244,246,248,.82);
+    --btn:#c0392b;
+    --btn-hover:#d64535;
+    --btn-shadow:rgba(120,24,16,.45);
+    --btn-ghost:rgba(255,255,255,.14);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    font-family:"PingFang SC","Helvetica Neue","Microsoft YaHei",sans-serif;
+    background:#0e1620;color:var(--text);overflow:hidden;
+  }
+
+  .page{
+    position:relative;width:100%;height:100%;min-height:100vh;min-height:100dvh;
+    overflow:hidden;cursor:pointer;
+  }
+
+  .bg{
+    position:absolute;inset:0;width:100%;height:100%;
+    object-fit:cover;object-position:center center;
+    user-select:none;pointer-events:none;
+    transition:filter 1.2s ease, transform .6s ease;
+  }
+  .page.dim .bg{filter:brightness(.55) saturate(.85);}
+  .page.alarm .bg{animation:shake .12s infinite;}
+
+  .shade{
+    position:absolute;inset:0;pointer-events:none;
+    background:
+      linear-gradient(180deg,rgba(8,14,22,.18) 0%,rgba(8,14,22,0) 40%,rgba(8,14,22,.35) 75%,rgba(8,14,22,.78) 100%);
+    transition:opacity .8s ease;
+  }
+
+  .flash{
+    position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:5;
+    transition:opacity .55s ease;
+  }
+  .flash.on{opacity:1;}
+
+  .badge{
+    position:absolute;top:18%;left:50%;transform:translateX(-50%);
+    padding:10px 22px;background:#fff8ea;border:2px solid rgba(37,37,37,.85);
+    border-radius:8px;color:#252525;font-weight:800;font-size:clamp(15px,3vw,18px);
+    letter-spacing:.08em;opacity:0;z-index:3;transition:opacity 1s ease;
+    box-shadow:0 8px 24px rgba(0,0,0,.25);
+  }
+  .badge.show{opacity:1;}
+  .badge.fade-out{opacity:0;transform:translateX(-50%) translateY(-12px);}
+
+  .clock{
+    position:absolute;top:14%;right:clamp(16px,5vw,48px);
+    font-size:clamp(28px,6vw,42px);font-weight:800;letter-spacing:.06em;
+    opacity:0;z-index:3;text-shadow:0 2px 16px rgba(0,0,0,.45);
+    transition:opacity .6s ease;
+  }
+  .clock.show{opacity:1;}
+
+  .stage{
+    position:absolute;z-index:2;left:0;right:0;bottom:0;
+    padding:0 16px calc(20px + env(safe-area-inset-bottom));
+    display:flex;flex-direction:column;align-items:center;gap:12px;
+    pointer-events:none;
+  }
+  .stage.interactive{pointer-events:auto;}
+
+  .panel{
+    width:min(92vw,520px);padding:clamp(20px,4vw,28px) clamp(20px,4vw,32px) clamp(22px,4vw,30px);
+    background:var(--panel);border:1px solid var(--panel-border);
+    border-radius:18px 18px 14px 14px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    box-shadow:0 -4px 32px rgba(0,0,0,.28),0 16px 48px rgba(0,0,0,.22);
+    text-align:center;
+    opacity:0;transform:translateY(20px);
+    transition:opacity .65s ease, transform .65s ease;
+  }
+  .panel.show{opacity:1;transform:translateY(0);}
+
+  .line{
+    font-size:clamp(16px,3.2vw,22px);font-weight:700;line-height:1.75;
+    color:var(--text);margin-bottom:clamp(8px,2vh,14px);
+  }
+  .line:last-of-type{margin-bottom:clamp(16px,3vh,22px);}
+  .line.muted{font-size:clamp(14px,2.8vw,18px);font-weight:500;color:var(--muted);}
+  .line.title{
+    font-size:clamp(17px,3.4vw,24px);font-weight:800;line-height:1.65;
+    letter-spacing:.04em;
+  }
+
+  .actions{
+    display:none;flex-wrap:wrap;gap:10px;justify-content:center;
+  }
+  .actions.show{display:flex;}
+
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;
+    min-width:min(240px,72vw);padding:13px 28px;
+    border:none;border-radius:999px;cursor:pointer;
+    font-size:clamp(15px,3vw,18px);font-weight:800;letter-spacing:.08em;
+    transition:transform .08s ease, box-shadow .08s ease, filter .15s ease;
+  }
+  .btn-primary{
+    background:linear-gradient(180deg,var(--btn-hover) 0%,var(--btn) 100%);
+    color:#fff;
+    box-shadow:0 6px 0 var(--btn-shadow),0 14px 28px rgba(0,0,0,.28);
+  }
+  .btn-primary:hover{filter:brightness(1.06);}
+  .btn-primary:active{
+    transform:translateY(4px);
+    box-shadow:0 2px 0 var(--btn-shadow),0 8px 16px rgba(0,0,0,.22);
+  }
+  .btn-ghost{
+    background:var(--btn-ghost);color:var(--text);
+    border:1px solid rgba(255,255,255,.18);
+  }
+
+  .skip{
+    position:absolute;top:calc(12px + env(safe-area-inset-top));right:16px;z-index:10;
+    padding:8px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.22);
+    background:rgba(0,0,0,.28);color:var(--muted);font-size:13px;font-weight:600;
+    cursor:pointer;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  }
+  .skip.hide{opacity:0;pointer-events:none;}
+
+  .tap-hint{
+    position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+    font-size:13px;color:rgba(244,246,248,.45);z-index:1;pointer-events:none;
+    opacity:0;transition:opacity .4s ease;
+  }
+  .tap-hint.show{opacity:1;}
+
+  @keyframes shake{
+    0%,100%{transform:translate(0,0);}
+    25%{transform:translate(-3px,2px);}
+    50%{transform:translate(3px,-2px);}
+    75%{transform:translate(-2px,-3px);}
+  }
+  @keyframes fadeUp{
+    from{opacity:0;transform:translateY(24px);}
+    to{opacity:1;transform:translateY(0);}
+  }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <img class="bg" id="bg" src="../assets/images/index.png" alt="Zack 的卧室">
+  <div class="shade" aria-hidden="true"></div>
+  <div class="flash" id="flash"></div>
+  <div class="badge" id="badge">CEO</div>
+  <div class="clock" id="clock">7:15</div>
+  <div class="tap-hint" id="tapHint">点击继续</div>
+
+  <button type="button" class="skip" id="btnSkip">跳过</button>
+
+  <div class="stage" id="stage">
+    <div class="panel" id="panel">
+      <p class="line" id="lineMain"></p>
+      <p class="line muted" id="lineSub" style="display:none"></p>
+      <div class="actions" id="actions">
+        <button type="button" class="btn btn-primary" id="btnWork">起床上班</button>
+        <button type="button" class="btn btn-ghost" id="btnSleep">再睡五分钟</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const STEPS=[
+  {flash:true, main:"👏 掌声雷动……", sub:"", dim:false, alarm:false, badge:false, clock:false, auto:3000},
+  {flash:false, main:"⏰ 闹钟响了", sub:"", dim:true, alarm:true, badge:false, clock:false, auto:3000, tone:"alarm"},
+  {flash:false, main:"7:15", sub:"卧室。阳光还没完全进来。", dim:false, alarm:false, badge:false, clock:true, auto:3000},
+  {flash:false, main:"原来一切都是一场梦。", sub:"", dim:false, alarm:false, badge:false, clock:true, auto:3000},
+  {flash:false, main:"", sub:"", dim:false, alarm:false, badge:true, clock:true, auto:3000},
+  {flash:false, main:"上班去了。", sub:"Zack 拎起包，像什么都没发生过。", dim:false, alarm:false, badge:true, clock:true, badgeFade:true, auto:3000},
+  {flash:false, main:"班上多了，副作用就是喜欢做梦。", sub:"", dim:false, alarm:false, badge:false, clock:false, auto:0, final:true},
+];
+
+let actx=null, soundOn=true, stepIdx=-1, timer=null, done=false;
+
+function ensureAudio(){
+  if(!actx){ try{ actx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} }
+  if(actx&&actx.state==="suspended") actx.resume();
+}
+function tone(f,dur,type="sine",vol=0.12,slideTo=null){
+  if(!actx||!soundOn) return;
+  const t=actx.currentTime,o=actx.createOscillator(),g=actx.createGain();
+  o.type=type; o.frequency.setValueAtTime(f,t);
+  if(slideTo) o.frequency.linearRampToValueAtTime(slideTo,t+dur);
+  g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t+dur);
+}
+function playAlarm(){
+  if(!soundOn) return;
+  [880,880,660,660].forEach((f,i)=>setTimeout(()=>tone(f,0.18,"square",0.1),i*220));
+}
+
+const page=document.getElementById("page");
+const flash=document.getElementById("flash");
+const panel=document.getElementById("panel");
+const lineMain=document.getElementById("lineMain");
+const lineSub=document.getElementById("lineSub");
+const badge=document.getElementById("badge");
+const clock=document.getElementById("clock");
+const actions=document.getElementById("actions");
+const stage=document.getElementById("stage");
+const tapHint=document.getElementById("tapHint");
+const btnSkip=document.getElementById("btnSkip");
+
+function clearTimer(){
+  if(timer){ clearTimeout(timer); timer=null; }
+}
+
+function applyStep(s){
+  flash.classList.toggle("on",!!s.flash);
+  page.classList.toggle("dim",!!s.dim);
+  page.classList.toggle("alarm",!!s.alarm);
+  clock.classList.toggle("show",!!s.clock);
+  badge.classList.toggle("show",!!s.badge);
+  badge.classList.toggle("fade-out",false);
+  if(s.badgeFade){
+    setTimeout(()=>badge.classList.add("fade-out"),1200);
+  }
+
+  if(s.tone==="alarm") playAlarm();
+
+  if(s.final){
+    lineMain.className="line title";
+    lineMain.textContent=s.main;
+    lineSub.style.display="none";
+    actions.classList.add("show");
+    stage.classList.add("interactive");
+    tapHint.classList.remove("show");
+    btnSkip.classList.add("hide");
+    panel.classList.add("show");
+    done=true;
+    return;
+  }
+
+  lineMain.className="line";
+  if(s.main==="7:15"){
+    lineMain.textContent="";
+    clock.classList.add("show");
+  } else {
+    lineMain.textContent=s.main;
+  }
+
+  if(s.sub){
+    lineSub.style.display="block";
+    lineSub.textContent=s.sub;
+  } else {
+    lineSub.style.display="none";
+  }
+
+  panel.classList.remove("show");
+  requestAnimationFrame(()=>panel.classList.add("show"));
+  tapHint.classList.add("show");
+}
+
+function nextStep(){
+  if(done) return;
+  ensureAudio();
+  clearTimer();
+  stepIdx++;
+  if(stepIdx>=STEPS.length) return;
+  const s=STEPS[stepIdx];
+  applyStep(s);
+  if(s.auto>0){
+    timer=setTimeout(nextStep,s.auto);
+  }
+}
+
+function skipToEnd(){
+  clearTimer();
+  stepIdx=STEPS.length-2;
+  done=false;
+  badge.classList.remove("show","fade-out");
+  nextStep();
+}
+
+page.addEventListener("click",(e)=>{
+  if(e.target.closest(".btn")||e.target.closest(".skip")) return;
+  if(done) return;
+  nextStep();
+});
+btnSkip.addEventListener("click",(e)=>{ e.stopPropagation(); skipToEnd(); });
+document.getElementById("btnWork").addEventListener("click",(e)=>{
+  e.stopPropagation(); location.href="../index.html";
+});
+document.getElementById("btnSleep").addEventListener("click",(e)=>{
+  e.stopPropagation(); location.href="mt-level1-demo.html";
+});
+
+nextStep();
+</script>
+</body>
+</html>

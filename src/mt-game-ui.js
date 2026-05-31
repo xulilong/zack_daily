@@ -1,0 +1,370 @@
+/* MT大冒险 · 共用 UI 交互 */
+window.MTUI = (function(){
+  let opts = {};
+  let paused = false;
+  let started = false;
+  let hintCurrent = "";
+  let toastTimer = 0;
+  let overlayRestore = null;
+
+  function $(id){ return document.getElementById(id); }
+
+  function hideOverlay(){
+    const ov = $("overlay");
+    if(ov) ov.classList.remove("show");
+  }
+
+  function showOverlay(){
+    const ov = $("overlay");
+    if(ov) ov.classList.add("show");
+  }
+
+  function showModal(cfg){
+    const modal = $("modal");
+    if(!modal) return;
+    const tag = cfg.tag ? `<div class="modal-tag">${cfg.tag}</div>` : "";
+    const actions = (cfg.actions || []).map(a =>
+      `<button type="button" class="btn ${a.kind || "btn-primary"}" data-act="${a.id}">${a.label}</button>`
+    ).join("");
+    modal.innerHTML = `${tag}<h2>${cfg.title}</h2><div class="modal-body">${cfg.body || ""}</div><div class="modal-actions">${actions}</div>`;
+    (cfg.actions || []).forEach(a => {
+      const btn = modal.querySelector(`[data-act="${a.id}"]`);
+      if(btn) btn.addEventListener("click", a.onClick);
+    });
+    showOverlay();
+  }
+
+  function showStart(){
+    paused = false;
+    started = false;
+    syncPauseBtn();
+    overlayRestore = showStart;
+    showModal({
+      tag: opts.levelTag || "关卡",
+      title: opts.startTitle || "准备好了吗？",
+      body: opts.startBody || "点击开始进入冒险。",
+      actions: [{
+        id: "start",
+        label: opts.startBtn || "开始",
+        kind: "btn-primary",
+        onClick(){
+          ensureStart();
+        }
+      }]
+    });
+  }
+
+  function ensureStart(){
+    if(typeof opts.onBeforeStart === "function") opts.onBeforeStart();
+    started = true;
+    paused = false;
+    hideOverlay();
+    overlayRestore = null;
+    syncPauseBtn();
+    if(typeof opts.ensureAudio === "function") opts.ensureAudio();
+  }
+
+  function showPauseMenu(){
+    paused = true;
+    syncPauseBtn();
+    overlayRestore = showPauseMenu;
+    showModal({
+      tag: "暂停",
+      title: "休息一下",
+      body: "Zack 喘口气。",
+      actions: [
+        { id: "resume", label: "继续", kind: "btn-primary", onClick: resume },
+        { id: "retry", label: "重来", kind: "btn-secondary", onClick: retry },
+        { id: "home", label: "首页", kind: "btn-ghost", onClick: goHome }
+      ]
+    });
+  }
+
+  function togglePause(){
+    if(!started || (opts.isTerminal && opts.isTerminal())) return;
+    if(paused) resume();
+    else showPauseMenu();
+  }
+
+  function resume(){
+    paused = false;
+    syncPauseBtn();
+    hideOverlay();
+    overlayRestore = null;
+  }
+
+  function retry(){
+    paused = false;
+    started = true;
+    syncPauseBtn();
+    hideOverlay();
+    overlayRestore = null;
+    if(typeof opts.onRetry === "function") opts.onRetry();
+  }
+
+  function goHome(){
+    location.href = opts.homeUrl || "../index.html";
+  }
+
+  function showLevelProgress(){
+    const savedRestore = overlayRestore;
+    const shouldResumeOnClose = started && !paused && !(opts.isTerminal && opts.isTerminal());
+    if(shouldResumeOnClose){
+      paused = true;
+      syncPauseBtn();
+    }
+    const body = window.MTProgress
+      ? MTProgress.renderProgressHtml({ currentLevelId: opts.levelId || 0 })
+      : "<p>暂无进度数据</p>";
+    showModal({
+      tag: "冒险",
+      title: "关卡进度",
+      body,
+      actions: [{
+        id: "close",
+        label: "关闭",
+        kind: "btn-primary",
+        onClick(){
+          hideOverlay();
+          if(shouldResumeOnClose) resume();
+          else if(typeof savedRestore === "function") savedRestore();
+        }
+      }]
+    });
+  }
+
+  function toggleMute(){
+    if(typeof opts.toggleSound === "function"){
+      const on = opts.toggleSound();
+      const btn = $("btn_mute");
+      if(btn){
+        btn.textContent = on ? "🔊" : "🔇";
+        btn.classList.toggle("muted", !on);
+        btn.setAttribute("aria-label", on ? "关闭声音" : "开启声音");
+      }
+      toast(on ? "声音已开" : "声音已关", 900);
+    }
+  }
+
+  function syncPauseBtn(){
+    const btn = $("btn_pause");
+    if(btn){
+      btn.textContent = paused ? "▶" : "⏸";
+      btn.classList.toggle("active", paused);
+      btn.setAttribute("aria-label", paused ? "继续" : "暂停");
+    }
+  }
+
+  function syncKeys(keys){
+    document.querySelectorAll(".key").forEach(k => {
+      const w = k.dataset.k;
+      let on = false;
+      if(w === "left") on = keys.left;
+      else if(w === "right") on = keys.right;
+      else if(w === "down") on = keys.down;
+      else if(w === "run") on = keys.run;
+      else if(w === "attack") on = keys.attack;
+      k.classList.toggle("on", !!on);
+    });
+  }
+
+  function updateProgress(ratio){
+    const bar = $("ui_progress");
+    if(bar) bar.style.width = Math.min(100, Math.max(0, ratio * 100)).toFixed(1) + "%";
+  }
+
+  function updateHint(text){
+    const el = $("ui_hint_text");
+    if(!el || !text || text === hintCurrent) return;
+    hintCurrent = text;
+    el.textContent = text;
+    el.classList.add("changed");
+    setTimeout(() => el.classList.remove("changed"), 650);
+  }
+
+  function updateLives(n, max, flash){
+    const el = $("ui_lives");
+    if(!el) return;
+    const hearts = "♥".repeat(Math.max(0, n)) + "♡".repeat(Math.max(0, max - n));
+    el.innerHTML = `<span class="lbl">命</span><span class="hearts">${hearts}</span>`;
+    if(flash){
+      el.classList.remove("lost");
+      void el.offsetWidth;
+      el.classList.add("lost");
+    }
+  }
+
+  function toast(msg, ms){
+    const el = $("ui_toast");
+    if(!el) return;
+    el.textContent = msg;
+    el.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove("show"), ms || 1200);
+  }
+
+  function showGameOver(cfg){
+    started = false;
+    overlayRestore = () => showGameOver(cfg);
+    showModal({
+      tag: cfg.tag || "失败",
+      title: cfg.title || "再来一次？",
+      body: cfg.body || "生命用完了。",
+      actions: [
+        { id: "retry", label: "重来", kind: "btn-primary", onClick: retry },
+        { id: "home", label: "首页", kind: "btn-ghost", onClick: goHome }
+      ].concat(cfg.extraActions || [])
+    });
+  }
+
+  /** 命用完且 MT币≥cost 时，询问是否花币续命 */
+  function tryCoinContinue(cfg){
+    const cost = cfg.cost ?? opts.coinLifeCost ?? 100;
+    const failCfg = cfg.gameOverCfg || {
+      tag: "失败",
+      title: "再来一次？",
+      body: "生命用完了。"
+    };
+    const goFail = () => {
+      if(typeof cfg.onGameOver === "function") cfg.onGameOver(failCfg);
+      else showGameOver(failCfg);
+    };
+
+    if((cfg.score|0) < cost){
+      goFail();
+      return;
+    }
+
+    started = false;
+    paused = true;
+    syncPauseBtn();
+    overlayRestore = null;
+    showModal({
+      tag: "续命",
+      title: "MT币换命？",
+      body: `你还有 <strong>${cfg.score}</strong> MT币。<br>花 <strong>${cost}</strong> 买 1 条命继续？`,
+      actions: [
+        {
+          id: "buy",
+          label: `${cost} MT币续命`,
+          kind: "btn-primary",
+          onClick(){
+            hideOverlay();
+            started = true;
+            paused = false;
+            syncPauseBtn();
+            overlayRestore = null;
+            if(typeof cfg.onRevive === "function") cfg.onRevive(cost);
+          }
+        },
+        {
+          id: "decline",
+          label: "算了",
+          kind: "btn-ghost",
+          onClick: goFail
+        }
+      ]
+    });
+  }
+
+  function showWin(cfg){
+    started = false;
+    if(cfg.levelId && window.MTProgress){
+      MTProgress.completeLevel(cfg.levelId);
+    }
+    const actions = [{ id: "retry", label: "再玩一次", kind: "btn-secondary", onClick: retry }];
+    if(cfg.nextUrl){
+      actions.unshift({ id: "next", label: cfg.nextLabel || "下一关", kind: "btn-primary",
+        onClick(){ location.href = cfg.nextUrl; } });
+    }
+    actions.push({ id: "home", label: "回首页", kind: "btn-ghost", onClick: goHome });
+    overlayRestore = () => showWin(cfg);
+    showModal({
+      tag: "通关",
+      title: cfg.title || "过关！",
+      body: cfg.body || "",
+      actions
+    });
+  }
+
+  function bindKeys(keys, doJump, ensureAudio, doAttack){
+    addEventListener("keydown", e => {
+      if(e.code === "Escape"){
+        e.preventDefault();
+        if(started) togglePause();
+        return;
+      }
+      if(!started || paused) return;
+      if(typeof ensureAudio === "function") ensureAudio();
+      if(e.code === "ArrowLeft" || e.code === "KeyA"){ keys.left = true; e.preventDefault(); }
+      else if(e.code === "ArrowRight" || e.code === "KeyD"){ keys.right = true; e.preventDefault(); }
+      else if(e.code === "ArrowDown" || e.code === "KeyS"){ keys.down = true; e.preventDefault(); }
+      else if(e.code === "ShiftLeft" || e.code === "ShiftRight" || e.code === "KeyZ"){ keys.run = true; e.preventDefault(); }
+      else if((e.code === "ArrowUp" || e.code === "Space" || e.code === "KeyW") && !e.repeat){
+        doJump(); e.preventDefault();
+      }
+      else if((e.code === "KeyX" || e.code === "KeyJ" || e.code === "KeyF") && !e.repeat && typeof doAttack === "function"){
+        doAttack(); e.preventDefault();
+      }
+      syncKeys(keys);
+    });
+    addEventListener("keyup", e => {
+      if(e.code === "ArrowLeft" || e.code === "KeyA") keys.left = false;
+      if(e.code === "ArrowRight" || e.code === "KeyD") keys.right = false;
+      if(e.code === "ArrowDown" || e.code === "KeyS") keys.down = false;
+      if(e.code === "ShiftLeft" || e.code === "ShiftRight" || e.code === "KeyZ") keys.run = false;
+      syncKeys(keys);
+    });
+    document.querySelectorAll(".key").forEach(k => {
+      const w = k.dataset.k;
+      const dn = e => {
+        e.preventDefault();
+        if(!started || paused) return;
+        if(typeof ensureAudio === "function") ensureAudio();
+        if(w === "jump") doJump();
+        else if(w === "attack" && typeof doAttack === "function") doAttack();
+        else if(w === "run") keys.run = true;
+        else keys[w] = true;
+        syncKeys(keys);
+      };
+      const up = e => {
+        e.preventDefault();
+        if(w === "run") keys.run = false;
+        else if(w !== "jump" && w !== "attack") keys[w] = false;
+        syncKeys(keys);
+      };
+      k.addEventListener("pointerdown", dn);
+      k.addEventListener("pointerup", up);
+      k.addEventListener("pointerleave", up);
+      k.addEventListener("pointercancel", up);
+    });
+  }
+
+  function init(options){
+    opts = options || {};
+    hintCurrent = opts.defaultHint || "";
+    const homeBtn = $("btn_home");
+    const pauseBtn = $("btn_pause");
+    const muteBtn = $("btn_mute");
+    const levelsBtn = $("btn_levels");
+    if(homeBtn) homeBtn.addEventListener("click", goHome);
+    if(pauseBtn) pauseBtn.addEventListener("click", togglePause);
+    if(muteBtn) muteBtn.addEventListener("click", toggleMute);
+    if(levelsBtn) levelsBtn.addEventListener("click", showLevelProgress);
+    document.addEventListener("visibilitychange", () => {
+      if(document.hidden && started && !(opts.isTerminal && opts.isTerminal())){
+        paused = true;
+        syncPauseBtn();
+      }
+    });
+    if(typeof opts.onInit === "function") opts.onInit();
+    showStart();
+  }
+
+  return {
+    init, bindKeys, isActive(){ return started && !paused; },
+    isStarted(){ return started; },
+    syncKeys, updateProgress, updateHint, updateLives, toast,
+    showGameOver, showWin, hideOverlay, ensureStart, retry, goHome, tryCoinContinue
+  };
+})();

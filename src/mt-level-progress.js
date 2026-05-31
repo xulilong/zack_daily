@@ -63,8 +63,14 @@ window.MTProgress = (function(){
     return next;
   }
 
+  function setRunCoins(n){
+    const val = Math.max(0, n | 0);
+    try{ localStorage.setItem(RUN_COINS_KEY, String(val)); }catch(e){}
+    return val;
+  }
+
   function resetRunCoins(){
-    try{ localStorage.setItem(RUN_COINS_KEY, "0"); }catch(e){}
+    return setRunCoins(0);
   }
 
   function setCeoName(name){
@@ -120,6 +126,6 @@ window.MTProgress = (function(){
   return {
     LEVELS, TOTAL, read, write, isUnlocked, isCompleted,
     completeLevel, levelUrl, guardLevel, renderProgressHtml, renderRecord,
-    getRunCoins, addRunCoins, resetRunCoins, setCeoName, getCeoName
+    getRunCoins, addRunCoins, setRunCoins, resetRunCoins, setCeoName, getCeoName
   };
 })();

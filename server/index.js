@@ -202,7 +202,16 @@ app.post("/api/leaderboard/submit", async (req, res) => {
   }
 });
 
-app.use(express.static(ROOT));
+app.use("/assets", express.static(path.join(ROOT, "assets"), {
+  maxAge: process.env.NODE_ENV === "production" ? "30d" : 0,
+  etag: true,
+  lastModified: true
+}));
+
+app.use(express.static(ROOT, {
+  maxAge: process.env.NODE_ENV === "production" ? "1h" : 0,
+  etag: true
+}));
 
 app.get("*", (req, res, next) => {
   if(req.path.startsWith("/api/")) return next();

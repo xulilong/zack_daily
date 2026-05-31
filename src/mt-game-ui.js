@@ -183,8 +183,8 @@ window.MTUI = (function(){
     const loading = '<p class="lb-empty">加载排行榜…</p>';
 
     showModal({
-      tag: "CEO 榜",
-      title: "MT币排行榜",
+      tag: "",
+      title: "MT排行榜",
       body: loading,
       actions: [{
         id: "close",
@@ -449,7 +449,7 @@ window.MTUI = (function(){
     if(cfg.levelId && window.MTProgress){
       MTProgress.completeLevel(cfg.levelId);
       const st = sessionStats();
-      MTProgress.addRunCoins(st.score | 0);
+      MTProgress.setRunCoins(st.score | 0);
     }
     track("level_win", sessionStats());
     const actions = [{ id: "retry", label: "再玩一次", kind: "btn-secondary", onClick: retry }];

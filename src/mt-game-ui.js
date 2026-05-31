@@ -6,6 +6,9 @@ window.MTUI = (function(){
   let hintCurrent = "";
   let toastTimer = 0;
   let overlayRestore = null;
+  let collectDefs = [];
+  let collectState = {};
+  let collectPrev = {};
 
   function $(id){ return document.getElementById(id); }
 
@@ -194,6 +197,78 @@ window.MTUI = (function(){
     }
   }
 
+  function normalizeCollectState(val){
+    if(val === true || val === "done") return "done";
+    if(val === "active") return "active";
+    return "pending";
+  }
+
+  function setupCollectibles(items){
+    collectDefs = Array.isArray(items) ? items : [];
+    collectState = {};
+    collectPrev = {};
+    const header = document.querySelector(".game-header");
+    if(!header) return;
+    let bar = $("ui_collect");
+    if(!collectDefs.length){
+      if(bar) bar.remove();
+      return;
+    }
+    if(!bar){
+      bar = document.createElement("div");
+      bar.className = "collect-bar";
+      bar.id = "ui_collect";
+      bar.innerHTML = '<span class="collect-label" id="ui_collect_label">目标</span><div class="collect-list" id="ui_collect_list"></div>';
+      header.appendChild(bar);
+    }
+    collectDefs.forEach(item => {
+      collectState[item.id] = "pending";
+      collectPrev[item.id] = "pending";
+    });
+    renderCollectibles();
+  }
+
+  function renderCollectibles(){
+    const list = $("ui_collect_list");
+    const label = $("ui_collect_label");
+    if(!list || !collectDefs.length) return;
+    let doneCount = 0;
+    list.innerHTML = collectDefs.map(item => {
+      const state = collectState[item.id] || "pending";
+      if(state === "done") doneCount++;
+      const icon = state === "done" ? "✓" : (state === "active" ? "●" : "○");
+      const title = state === "done" ? "已获得" : (state === "active" ? "进行中" : "未获得");
+      const cls = state === "pending" ? "" : ` ${state}`;
+      const flash = collectPrev[item.id] !== state && state !== "pending" ? " flash" : "";
+      return `<span class="collect-item${cls}${flash}" data-id="${item.id}" title="${title}"><span class="ci-icon">${icon}</span>${item.label}</span>`;
+    }).join("");
+    if(label) label.innerHTML = `目标<em>${doneCount}/${collectDefs.length}</em>`;
+    collectDefs.forEach(item => { collectPrev[item.id] = collectState[item.id] || "pending"; });
+  }
+
+  /** states: { id: true | false | "active" | "done" | "pending" } */
+  function updateCollectibles(states){
+    if(!collectDefs.length || !states) return;
+    let changed = false;
+    collectDefs.forEach(item => {
+      if(!(item.id in states)) return;
+      const next = normalizeCollectState(states[item.id]);
+      if(collectState[item.id] !== next){
+        collectState[item.id] = next;
+        changed = true;
+      }
+    });
+    if(changed) renderCollectibles();
+  }
+
+  function resetCollectibles(){
+    collectDefs.forEach(item => {
+      collectState[item.id] = "pending";
+      collectPrev[item.id] = "pending";
+    });
+    if(collectDefs.length) renderCollectibles();
+  }
+
   function toast(msg, ms){
     const el = $("ui_toast");
     if(!el) return;
@@ -358,6 +433,7 @@ window.MTUI = (function(){
       }
     });
     if(typeof opts.onInit === "function") opts.onInit();
+    setupCollectibles(opts.collectibles);
     showStart();
   }
 
@@ -365,6 +441,7 @@ window.MTUI = (function(){
     init, bindKeys, isActive(){ return started && !paused; },
     isStarted(){ return started; },
     syncKeys, updateProgress, updateHint, updateLives, toast,
+    updateCollectibles, resetCollectibles,
     showGameOver, showWin, hideOverlay, ensureStart, retry, goHome, tryCoinContinue
   };
 })();

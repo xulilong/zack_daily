@@ -1447,12 +1447,6 @@ function drawWorld(){
         ctx.fillStyle=INK; ctx.font="600 11px PingFang SC,sans-serif"; ctx.textAlign="center";
         ctx.fillText(e.label||"移动台",e.x+e.w/2,e.y+12); ctx.textAlign="left";
       }
-      if(e.boxSlot){
-        ctx.setLineDash([5,4]); ctx.strokeStyle="rgba(201,149,106,.85)"; ctx.lineWidth=2;
-        rrect(e.x-4,e.y-20,e.w+8,16,4); ctx.stroke(); ctx.setLineDash([]);
-        ctx.fillStyle="#a87848"; ctx.font="700 10px PingFang SC,sans-serif"; ctx.textAlign="center";
-        ctx.fillText("推到这里",e.x+e.w/2,e.y-8); ctx.textAlign="left";
-      }
     } else if(e.type==="box"){
       ctx.fillStyle="#fff"; ctx.lineWidth=2.5;
       rrect(e.x,e.y,e.w,e.h,4); fillStroke();

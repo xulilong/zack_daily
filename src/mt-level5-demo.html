@@ -89,7 +89,7 @@
         <div class="key jump" data-k="jump">▲</div>
       </div>
     </div>
-    <div class="help">方向 · 空格跳 · Shift 快跑 · ↓ 蹲 · 找 NPC 领手续 · 端文件夹 · 落座过关</div>
+    <div class="help">方向 · 空格跳 · Shift 快跑 · ↓ 蹲 · 前台领卡 → 推椅 → 领手续 → 董事会落座</div>
   </footer>
 </div>
 
@@ -97,7 +97,7 @@
 <script src="mt-game-ui.js"></script>
 <script>
 const cv=document.getElementById("cv"), ctx=cv.getContext("2d");
-const VW=960, VH=540, GROUND=460, WORLD_W=9500, MAX_LIVES=10;
+const VW=960, VH=540, GROUND=460, WORLD_W=7200, MAX_LIVES=6;
 const INK="#252525", PAPER="#faf8f4", SIDE="#e8e4dc", SIDE2="#ddd8cf", SKY="#f2ebe3";
 
 /* ===== 音效 ===== */
@@ -127,106 +127,71 @@ const sfx={
   win:()=>{tone(523,0.12,"triangle",0.2);setTimeout(()=>tone(659,0.12,"triangle",0.2),110);setTimeout(()=>tone(784,0.24,"triangle",0.22),230);},
 };
 
-/* ===== 关卡5 · CEO办公室（NPC 交付 · 推箱 · 董事会 · 落座） ===== */
-const BRIEF_TIME=42;
+/* ===== 关卡5 · CEO办公室（四段式：前台 → 办公室 → 档案 → 董事会） ===== */
+const BRIEF_TIME=30;
 const ents=[
-  // A 前台 · 行政发门禁
+  // A 前台 · 领门禁
   {type:"platform",x:-20,y:GROUND,w:660,h:80,ground:true,zone:"hall"},
-  {type:"npc",x:240,y:GROUND-92,w:52,h:92,label:"行政",need:"still",charge:0,served:false,give:"access"},
-  {type:"turnstile",x:520,y:GROUND-58,w:52,h:58,charge:0,open:false,id:"ts1"},
-  {type:"coin",x:380,y:GROUND-28,w:22,h:22},
+  {type:"npc",x:220,y:GROUND-92,w:52,h:92,label:"行政",need:"still",charge:0,served:false,give:"access"},
+  {type:"turnstile",x:480,y:GROUND-58,w:52,h:58,charge:0,open:false,id:"ts1"},
+  {type:"coin",x:340,y:GROUND-28,w:22,h:22},
 
-  // B 纸箱1 · 400px 沟（桥台从左岸铺到右岸）
-  {type:"platform",x:660,y:GROUND,w:200,h:80,ground:true},
-  {type:"spike",x:860,y:GROUND-24,w:400,h:24,label:"搬家沟"},
+  // B 推椅过桥
+  {type:"platform",x:640,y:GROUND,w:200,h:80,ground:true},
+  {type:"spike",x:840,y:GROUND-24,w:400,h:24,label:"搬家沟"},
   {type:"platform",x:820,y:408,w:520,h:16,boxSlot:true},
   {type:"box",x:700,y:GROUND-52,w:52,h:52,label:"CEO椅",heavy:true,initX:700,initY:GROUND-52},
-  {type:"platform",x:1460,y:GROUND,w:340,h:80,ground:true},
+  {type:"platform",x:1240,y:GROUND,w:260,h:80,ground:true},
+  {type:"enemy",x:1180,y:GROUND-46,w:36,h:46,vx:58,patrol:[1000,1320],label:"同事"},
+  {type:"enemy",x:1380,y:GROUND-46,w:36,h:46,vx:-58,patrol:[1240,1480],label:"搬家师傅"},
 
-  {type:"enemy",x:1520,y:GROUND-46,w:36,h:46,vx:-55,patrol:[1460,1680],label:"搬家师傅"},
-  {type:"enemy",x:1320,y:GROUND-46,w:36,h:46,vx:50,patrol:[1260,1520],label:"同事"},
+  // C CEO办公室 · 任命书 → 工牌 → 低门
+  {type:"platform",x:1500,y:GROUND,w:1600,h:80,ground:true,zone:"myoffice"},
+  {type:"printer",x:1660,y:GROUND-76,w:68,h:76,charge:0,served:false},
+  {type:"hazard",x:1600,y:GROUND-44,w:150,h:40,kind:"smoke",cycle:3.2,activeT:1.7,phase:0,id:"printerSmoke"},
+  {type:"npc",x:1780,y:GROUND-92,w:52,h:92,label:"秘书",need:"crouch",charge:0,served:false,give:"badge"},
+  {type:"gate",x:1880,y:GROUND-70,w:95,h:70,need:"appointment"},
+  {type:"enemy",x:2180,y:GROUND-46,w:36,h:46,vx:-62,patrol:[2000,2380],label:"同事"},
+  {type:"enemy",x:2720,y:GROUND-46,w:36,h:46,vx:55,patrol:[2520,2920],label:"同事"},
+  {type:"coin",x:2100,y:GROUND-28,w:22,h:22},
 
-  // C 小办公室 · 打印机任命书 + 秘书给工牌
-  {type:"platform",x:1800,y:GROUND,w:500,h:80,ground:true,zone:"myoffice"},
-  {type:"printer",x:1960,y:GROUND-76,w:68,h:76,charge:0,served:false},
-  {type:"hazard",x:1900,y:GROUND-44,w:150,h:40,kind:"smoke",cycle:3.6,activeT:1.5,phase:0,id:"printerSmoke"},
-  {type:"npc",x:2080,y:GROUND-92,w:52,h:92,label:"秘书",need:"crouch",charge:0,served:false,give:"badge"},
-  {type:"gate",x:2180,y:GROUND-70,w:95,h:70,need:"appointment"},
-  {type:"platform",x:2275,y:GROUND,w:260,h:80,ground:true},
+  // D 档案 · 第二闸机 + 推箱
+  {type:"turnstile",x:3160,y:GROUND-58,w:52,h:58,charge:0,open:false,id:"ts2"},
+  {type:"platform",x:3100,y:GROUND,w:140,h:80,ground:true},
+  {type:"spike",x:3240,y:GROUND-24,w:420,h:24,label:"资料沟"},
+  {type:"platform",x:3320,y:408,w:540,h:16,boxSlot:true},
+  {type:"box",x:3120,y:GROUND-52,w:52,h:52,label:"档案",heavy:true,initX:3120,initY:GROUND-52},
+  {type:"platform",x:3660,y:GROUND,w:1540,h:80,ground:true},
+  {type:"enemy",x:3780,y:GROUND-46,w:36,h:46,vx:-60,patrol:[3660,4020],label:"同事"},
+  {type:"enemy",x:3900,y:GROUND-46,w:36,h:46,vx:62,patrol:[3720,4140],label:"行政"},
+  {type:"enemy",x:4380,y:GROUND-46,w:36,h:46,vx:68,patrol:[4180,4520],label:"行政",fast:true},
 
-  {type:"enemy",x:2100,y:GROUND-46,w:36,h:46,vx:58,patrol:[2020,2260],label:"同事"},
+  // E 工牌门
+  {type:"gate",x:4580,y:GROUND-70,w:95,h:70,need:"badge"},
 
-  // D 中转 · 多层桌面
-  {type:"platform",x:2535,y:GROUND,w:380,h:80,ground:true},
-  {type:"spike",x:2915,y:GROUND-24,w:200,h:24,label:"隔断"},
-  {type:"platform",x:2975,y:378,w:96,h:16},
-  {type:"platform",x:3100,y:338,w:92,h:16},
-  {type:"platform",x:3220,y:378,w:94,h:16},
-  {type:"platform",x:3334,y:GROUND,w:480,h:80,ground:true},
-
-  {type:"enemy",x:3020,y:332,w:36,h:46,vx:-62,patrol:[2980,3200],label:"同事"},
-  {type:"enemy",x:3420,y:GROUND-46,w:36,h:46,vx:-50,patrol:[3360,3580],label:"同事"},
-
-  // E 第二道闸机（需工牌）
-  {type:"turnstile",x:3760,y:GROUND-58,w:52,h:58,charge:0,open:false,id:"ts2"},
-  {type:"platform",x:3812,y:GROUND,w:180,h:80,ground:true},
-
-  // F 纸箱2 · 420px 沟
-  {type:"spike",x:3992,y:GROUND-24,w:420,h:24,label:"资料沟"},
-  {type:"platform",x:3950,y:408,w:540,h:16,boxSlot:true},
-  {type:"box",x:3840,y:GROUND-52,w:52,h:52,label:"档案",heavy:true,initX:3840,initY:GROUND-52},
-  {type:"platform",x:4602,y:GROUND,w:400,h:80,ground:true},
-
-  {type:"enemy",x:4140,y:366,w:36,h:46,vx:-58,patrol:[4020,4340],label:"行政"},
-  {type:"enemy",x:4480,y:GROUND-46,w:36,h:46,vx:52,patrol:[4400,4680],label:"同事"},
-
-  // G 后半 · 低门需工牌
-  {type:"platform",x:5002,y:GROUND,w:720,h:80,ground:true},
-  {type:"gate",x:5540,y:GROUND-70,w:95,h:70,need:"badge"},
-  {type:"platform",x:5635,y:GROUND,w:560,h:80,ground:true},
-  {type:"coffee",x:5820,y:GROUND-50,w:44,h:50,label:"咖啡"},
-  {type:"banana",x:6080,y:298,w:32,h:14,initX:6080},
-
-  {type:"enemy",x:5160,y:GROUND-46,w:36,h:46,vx:-48,patrol:[5060,5340],label:"同事"},
-  {type:"enemy",x:5380,y:GROUND-46,w:36,h:46,vx:60,patrol:[5280,5540],label:"同事"},
-  {type:"enemy",x:5740,y:GROUND-46,w:36,h:46,vx:-55,patrol:[5640,5920],label:"同事"},
-
-  // H 长走廊 → 助理给文件夹 · 经理查岗
-  {type:"platform",x:6195,y:GROUND,w:520,h:80,ground:true},
-  {type:"spike",x:6715,y:GROUND-24,w:240,h:24,label:"门槛"},
-  {type:"platform",x:6835,y:372,w:110,h:16},
-  {type:"platform",x:6980,y:332,w:100,h:16},
-  {type:"platform",x:7110,y:GROUND,w:2390,h:80,ground:true,zone:"corner"},
-
-  {type:"enemy",x:6280,y:GROUND-46,w:36,h:46,vx:58,patrol:[6180,6460],label:"同事"},
-  {type:"enemy",x:6880,y:332,w:36,h:46,vx:-65,patrol:[6820,7060],label:"同事"},
-  {type:"hideSpot",x:8780,y:GROUND-58,w:100,h:58},
-  {type:"hideSpot",x:9280,y:GROUND-58,w:100,h:58},
-  {type:"npc",x:8580,y:GROUND-92,w:52,h:92,label:"助理",need:"still",charge:0,served:false,give:"brief"},
-  {type:"dropZone",x:9040,y:GROUND-10,w:150,h:14,label:"交文件",done:false},
-  {type:"enemy",x:9050,y:GROUND-46,w:36,h:46,vx:85,patrol:[8900,9340],label:"经理",fast:true,id:"manager"},
-
-  // I 落座
-  {type:"mic",x:9120,y:GROUND-72,w:90,h:72,need:1.0,unlock:"sit",charge:0,open:false,padX:20},
-  {type:"platform",x:9080,y:GROUND-8,w:180,h:12,hidden:true,unlockGroup:"sit"},
-  {type:"goal",x:9240,y:GROUND-100,w:90,h:100,label:"CEO位",hidden:true,unlockGroup:"sit"},
-
-  {type:"coin",x:1100,y:GROUND-28,w:22,h:22},
-  {type:"coin",x:2000,y:GROUND-28,w:22,h:22},
-  {type:"coin",x:3100,y:338-22,w:22,h:22},
-  {type:"coin",x:4200,y:GROUND-28,w:22,h:22},
-  {type:"coin",x:5400,y:GROUND-28,w:22,h:22},
-  {type:"coin",x:6600,y:GROUND-28,w:22,h:22},
-  {type:"coin",x:7800,y:GROUND-28,w:22,h:22},
-  {type:"coin",x:8800,y:GROUND-28,w:22,h:22},
-  {type:"coin",x:9360,y:GROUND-28,w:22,h:22},
+  // F 董事会 · 领文件 → 交件 → 落座
+  {type:"platform",x:5200,y:GROUND,w:280,h:80,ground:true,zone:"corner"},
+  {type:"spike",x:5480,y:GROUND-24,w:80,h:24,label:"门槛"},
+  {type:"platform",x:5560,y:GROUND,w:1640,h:80,ground:true,zone:"corner"},
+  {type:"banana",x:6120,y:298,w:32,h:14,initX:6120},
+  {type:"hideSpot",x:5980,y:GROUND-58,w:100,h:58},
+  {type:"hideSpot",x:6380,y:GROUND-58,w:100,h:58},
+  {type:"npc",x:6280,y:GROUND-92,w:52,h:92,label:"助理",need:"still",charge:0,served:false,give:"brief"},
+  {type:"dropZone",x:6680,y:GROUND-10,w:150,h:14,label:"交文件",done:false},
+  {type:"enemy",x:5820,y:GROUND-46,w:36,h:46,vx:-65,patrol:[5480,6180],label:"同事"},
+  {type:"enemy",x:6520,y:GROUND-46,w:36,h:46,vx:92,patrol:[6000,6900],label:"经理",fast:true,id:"manager"},
+  {type:"mic",x:6860,y:GROUND-72,w:90,h:72,need:1.15,unlock:"sit",charge:0,open:false,padX:20},
+  {type:"platform",x:6820,y:GROUND-8,w:180,h:12,hidden:true,unlockGroup:"sit"},
+  {type:"goal",x:6980,y:GROUND-100,w:90,h:100,label:"CEO位",hidden:true,unlockGroup:"sit"},
+  {type:"coin",x:5600,y:GROUND-28,w:22,h:22},
+  {type:"coin",x:6900,y:GROUND-28,w:22,h:22},
 ];
 
 const bgSlots=[];
 
 const signSlots=[
-  {id:"ui_sign_office", x:1820, y:GROUND-118, w:88, h:48, poleX:1864, label:"CEO办公室"},
-  {id:"ui_sign_desk", x:9160, y:GROUND-118, w:72, h:48, poleX:9196, label:"落座"},
+  {id:"ui_sign_office", x:1520, y:GROUND-118, w:88, h:48, poleX:1564, label:"CEO办公室"},
+  {id:"ui_sign_desk", x:6880, y:GROUND-118, w:72, h:48, poleX:6916, label:"落座"},
 ];
 
 const player={x:80,y:GROUND-60,w:40,h:60,vx:0,vy:0,onGround:false,facing:1,walkT:0,squashT:0,crouch:false};
@@ -388,18 +353,20 @@ function resetGame(){
   });
   document.getElementById("overlay").classList.remove("show");
   prevLives=lives;
+  MTUI.resetCollectibles();
   updateHud();
 }
 
 function getZoneHint(x){
-  if(x<660) return hasAccessCard?"门禁在手，闸机秒开。":"找行政停稳领门禁卡。"
-  if(x<1800) return "把 CEO 椅推上桥台，滑过 400 的沟。"
-  if(x<2180) return hasAppointment?"任命书在手，低门可过。":"打印机旁停稳，等任命书出来。"
-  if(x<3760) return hasCeoBadge?"工牌在手。":"找秘书蹲下领 CEO 工牌。"
-  if(x<5002) return "第二箱更沉，420 的沟要推到位。"
-  if(x<6195) return "闸机再停一次；咖啡别乱喝。"
-  if(x<8580) return "董事会高峰来了！经理查岗，蹲进工位躲。"
-  if(x<9040) return briefDelivered?"文件已交，去落座。":"找助理领文件夹，交到落座区。"
+  if(x<640) return hasAccessCard?"门禁在手，闸机秒开。":"找行政停稳领门禁卡。"
+  if(x<1500) return "把 CEO 椅推上桥台，滑过沟。"
+  if(x<1880) return hasAppointment?"任命书在手，低门可过。":"打印机旁停稳，等任命书出来。"
+  if(x<3100) return hasCeoBadge?"工牌到手，继续往前。":"找秘书蹲下领 CEO 工牌。"
+  if(x<4580) return "推档案过桥，第二道闸机再停一次。"
+  if(x<5200) return "工牌门需蹲下通过。"
+  if(x<5560) return "董事会前有门槛，别带文件夹硬跑。"
+  if(x<6280) return "董事会高峰！经理查岗，蹲进工位躲。"
+  if(x<6680) return briefDelivered?"文件已交，去落座。":"找助理领文件夹，交到落座区。"
   return "在椅子上停稳落座。"
 }
 
@@ -451,6 +418,12 @@ function dropBrief(stumble){
   }
 }
 
+function getBriefCollectState(){
+  if(briefDelivered) return true;
+  if(fx.brief > 0) return "active";
+  return false;
+}
+
 function updateHud(){
   const pi=document.getElementById("ui_power_icon");
   MTUI.updateLives(lives, MAX_LIVES, lives<prevLives);
@@ -458,6 +431,13 @@ function updateHud(){
   document.getElementById("ui_score").innerHTML='<span class="lbl">MT币</span>'+score;
   MTUI.updateProgress(player.x/Math.max(1,WORLD_W-200));
   MTUI.updateHint(getZoneHint(player.x));
+  MTUI.updateCollectibles({
+    access: hasAccessCard,
+    appointment: hasAppointment,
+    badge: hasCeoBadge,
+    brief: getBriefCollectState(),
+    deliver: briefDelivered
+  });
   if(fx.boost>0){
     pi.style.display="inline-flex"; pi.className="stat fx boost";
     pi.innerHTML='<span class="lbl">加速</span>'+fx.boost.toFixed(1)+'s';
@@ -612,18 +592,18 @@ function update(dt){
   }});
 
   ents.forEach(en=>{ if(en.type==="enemy"&&!en.dead){
-    const boardRush=(T%15)<2.5;
-    let spd=en.fast?1.35:1;
-    if(boardRush&&en.x>6000) spd*=1.25;
+    const boardRush=(T%12)<3.2;
+    let spd=en.fast?1.45:1.08;
+    if(boardRush&&en.x>5200) spd*=1.35;
     en.x+=en.vx*spd*dt;
     if(en.x<=en.patrol[0]){ en.x=en.patrol[0]; en.vx=Math.abs(en.vx); }
     if(en.x+en.w>=en.patrol[1]){ en.x=en.patrol[1]-en.w; en.vx=-Math.abs(en.vx); }
   }});
 
-  const rushCycle=Math.floor(T/15);
-  if((T%15)<0.35&&rushCycle!==boardRushNotified&&player.x>6000){
+  const rushCycle=Math.floor(T/12);
+  if((T%12)<0.35&&rushCycle!==boardRushNotified&&player.x>5200){
     boardRushNotified=rushCycle;
-    MTUI.toast("董事会高峰！同事加快了");
+    MTUI.toast("董事会高峰！经理和同事加快了");
   }
 
   // 打印机烟雾（有任命书后停烟）
@@ -682,7 +662,7 @@ function update(dt){
   // 捡物
   const pb=playerBox();
   for(const e of ents){
-    if(e.type==="coin"&&!e.hidden&&aabb(pb,e)){ e.hidden=true; score+=10; sfx.coin(); MTUI.toast("+10 MT币"); }
+    if(e.type==="coin"&&!e.hidden&&aabb(pb,e)){ e.hidden=true; score+=10; sfx.coin(); }
     if(e.type==="coffee"&&!e.hidden&&aabb(pb,e)) pickCoffee(e);
     if(e.type==="umbrella"&&!e.hidden&&aabb(pb,e)) pickUmbrella(e);
     if(e.type==="banana"&&!e.hidden&&aabb(pb,e)&&(player.onGround||player.vy>80)) stepBanana(e);
@@ -696,10 +676,10 @@ function update(dt){
   for(const pr of ents){
     if(pr.type!=="printer"||pr.served) continue;
     const zone={x:pr.x-20,y:pr.y-8,w:pr.w+40,h:pr.h+16};
-    if(!aabb(pb,zone)){ pr.charge=Math.max(0,(pr.charge||0)-dt*1.5); continue; }
-    const still=Math.abs(player.vx)<24&&player.onGround;
-    if(still||player.crouch) pr.charge=Math.min(1,(pr.charge||0)+dt*(player.crouch?2.2:1.8));
-    else pr.charge=Math.max(0,(pr.charge||0)-dt*2.5);
+    if(!aabb(pb,zone)){ pr.charge=Math.max(0,(pr.charge||0)-dt*1.8); continue; }
+    const still=Math.abs(player.vx)<18&&player.onGround;
+    if(still||player.crouch) pr.charge=Math.min(1,(pr.charge||0)+dt*(player.crouch?1.9:1.5));
+    else pr.charge=Math.max(0,(pr.charge||0)-dt*3);
     if(pr.charge>=0.85){
       pr.served=true; pr.charge=1; hasAppointment=true;
       sfx.pickup(); MTUI.toast("任命书打印好了"); updateHud();
@@ -724,10 +704,10 @@ function update(dt){
       npc.charge=Math.max(0,(npc.charge||0)-dt*2.5);
       continue;
     }
-    const still=Math.abs(player.vx)<22&&player.onGround;
+    const still=Math.abs(player.vx)<18&&player.onGround;
     const ok=npc.need==="crouch" ? player.crouch&&still : (player.crouch||still);
-    if(ok) npc.charge=Math.min(1,(npc.charge||0)+dt*(player.crouch?2.4:1.8));
-    else npc.charge=Math.max(0,(npc.charge||0)-dt*2.5);
+    if(ok) npc.charge=Math.min(1,(npc.charge||0)+dt*(player.crouch?2.0:1.5));
+    else npc.charge=Math.max(0,(npc.charge||0)-dt*3);
     if(npc.charge>=0.85){
       npc.served=true; npc.charge=1;
       giveNpcItem(npc);
@@ -766,10 +746,10 @@ function update(dt){
     if(!aabb(pb,zone)){ ts.charge=Math.max(0,(ts.charge||0)-dt*2); continue; }
     if(ts.type==="turnstile"){
       if(tsInstantOpen(ts)||ts.open){ ts.open=true; ts.charge=1; continue; }
-      const still=Math.abs(player.vx)<22&&player.onGround;
-      if(player.crouch||still) ts.charge=Math.min(1,(ts.charge||0)+dt*(player.crouch?2.4:1.5));
-      else ts.charge=Math.max(0,(ts.charge||0)-dt*3);
-      if(ts.charge>=0.65) ts.open=true;
+      const still=Math.abs(player.vx)<18&&player.onGround;
+      if(player.crouch||still) ts.charge=Math.min(1,(ts.charge||0)+dt*(player.crouch?2.2:1.2));
+      else ts.charge=Math.max(0,(ts.charge||0)-dt*3.5);
+      if(ts.charge>=0.72) ts.open=true;
       if(ts.open) continue;
       const bar={x:ts.x,y:ts.y+8,w:ts.w,h:ts.h-8};
       if(!aabb(pb,bar)) continue;
@@ -785,7 +765,7 @@ function update(dt){
       const still=Math.abs(player.vx)<18&&player.onGround;
       if(!briefDelivered){ ts.charge=Math.max(0,(ts.charge||0)-dt*4); continue; }
       if(fx.crash>0){ ts.charge=Math.max(0,(ts.charge||0)-dt*4); continue; }
-      if(player.crouch||still) ts.charge=Math.min(1,(ts.charge||0)+dt*(player.crouch?2.2:1.2));
+      if(player.crouch||still) ts.charge=Math.min(need,(ts.charge||0)+dt*(player.crouch?2.2:1.2));
       else ts.charge=Math.max(0,(ts.charge||0)-dt*3);
       if(ts.charge>=need){
         ts.open=true;
@@ -1181,7 +1161,7 @@ function drawBackground(){
   }
 
   // 小办公室线框（储物间改的那种）
-  const ox=1820, oy=GROUND-198, ow=460, oh=196;
+  const ox=1520, oy=GROUND-198, ow=460, oh=196;
   ctx.strokeStyle=INK; ctx.lineWidth=2; ctx.globalAlpha=0.22;
   rrect(ox,oy,ow,oh,6); ctx.stroke();
   rline(ox+36,oy+oh-28,ox+ow-36,oy+oh-28);
@@ -1194,7 +1174,7 @@ function drawBackground(){
   ctx.fillText("Zack · CEO办公室",ox+230,oy+27); ctx.textAlign="left";
 
   // 角落小房间
-  const cx2=9080, cy2=GROUND-188, cw2=320, ch2=176;
+  const cx2=6820, cy2=GROUND-188, cw2=320, ch2=176;
   ctx.strokeStyle=INK; ctx.lineWidth=2; ctx.globalAlpha=0.18;
   rrect(cx2,cy2,cw2,ch2,6); ctx.stroke();
   rline(cx2+40,cy2+ch2-24,cx2+cw2-40,cy2+ch2-24);
@@ -1204,9 +1184,9 @@ function drawBackground(){
 
   // 打印机区提示
   ctx.fillStyle="#fff"; ctx.strokeStyle=INK; ctx.lineWidth=2;
-  rrect(1940,GROUND-72,48,28,4); fillStroke();
+  rrect(1640,GROUND-72,48,28,4); fillStroke();
   ctx.fillStyle=INK; ctx.font="700 9px PingFang SC,sans-serif"; ctx.textAlign="center";
-  ctx.fillText("文印",1964,GROUND-54); ctx.textAlign="left";
+  ctx.fillText("文印",1664,GROUND-54); ctx.textAlign="left";
 
   ctx.fillStyle="#fff8ea"; ctx.strokeStyle=INK; ctx.lineWidth=2;
   rrect(220,GROUND-118,72,40,4); fillStroke();
@@ -1214,9 +1194,9 @@ function drawBackground(){
   ctx.fillText("前台",256,GROUND-92); ctx.textAlign="left";
 
   ctx.fillStyle="#fff8ea"; ctx.strokeStyle=INK; ctx.lineWidth=2;
-  rrect(8520,GROUND-118,120,40,4); fillStroke();
+  rrect(6220,GROUND-118,120,40,4); fillStroke();
   ctx.fillStyle=INK; ctx.font="700 10px PingFang SC,sans-serif"; ctx.textAlign="center";
-  ctx.fillText("董事会",8580,GROUND-92); ctx.textAlign="left";
+  ctx.fillText("董事会",6280,GROUND-92); ctx.textAlign="left";
 
   ctx.restore();
 
@@ -1247,12 +1227,6 @@ function drawWorld(){
       if(e.type==="mover"){
         ctx.fillStyle=INK; ctx.font="600 11px PingFang SC,sans-serif"; ctx.textAlign="center";
         ctx.fillText(e.label||"移动台",e.x+e.w/2,e.y+12); ctx.textAlign="left";
-      }
-      if(e.boxSlot){
-        ctx.setLineDash([5,4]); ctx.strokeStyle="rgba(201,149,106,.85)"; ctx.lineWidth=2;
-        rrect(e.x-4,e.y-20,e.w+8,16,4); ctx.stroke(); ctx.setLineDash([]);
-        ctx.fillStyle="#a87848"; ctx.font="700 10px PingFang SC,sans-serif"; ctx.textAlign="center";
-        ctx.fillText("推到这里",e.x+e.w/2,e.y-8); ctx.textAlign="left";
       }
     } else if(e.type==="box"){
       ctx.fillStyle="#fff"; ctx.lineWidth=2.5;
@@ -1576,8 +1550,15 @@ MTUI.init({
   levelTag:"关卡5",
   homeUrl:"../index.html",
   defaultHint:"CEO办公室，终于到了……",
+  collectibles: [
+    { id: "access", label: "门禁卡" },
+    { id: "appointment", label: "任命书" },
+    { id: "badge", label: "CEO工牌" },
+    { id: "brief", label: "决策文件夹" },
+    { id: "deliver", label: "文件交付" }
+  ],
   startTitle:"CEO办公室",
-  startBody:"键盘或屏幕按钮操作。<br>找 NPC 领手续 · 推纸箱 · 端文件夹 · 落座过关 · <kbd>Esc</kbd> 暂停",
+  startBody:"四段路线：前台领卡 → 推椅进办公室 → 推档案过闸机 → 董事会交文件落座。<br><kbd>Esc</kbd> 暂停",
   startBtn:"进入CEO办公室",
   ensureAudio,
   toggleSound(){ soundOn=!soundOn; return soundOn; },

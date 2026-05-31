@@ -68,6 +68,22 @@
 .level-progress-list .level-name{flex:1;min-width:0;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .level-progress-list .level-status{flex:0 0 auto;font-size:12px;opacity:.85;}
 .level-progress-list .level-item.locked .level-status{font-size:11px;}
+.collect-bar{display:flex;align-items:flex-start;gap:8px;width:100%;padding-top:2px;
+  border-top:1px dashed rgba(37,37,37,.12);}
+.collect-label{flex:0 0 auto;font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.06em;
+  line-height:22px;white-space:nowrap;}
+.collect-label em{font-style:normal;color:var(--ink);font-weight:800;margin-left:2px;}
+.collect-list{display:flex;flex-wrap:wrap;gap:5px;flex:1;min-width:0;}
+.collect-item{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:999px;
+  font-size:10px;font-weight:700;line-height:1.2;color:var(--muted);
+  background:rgba(37,37,37,.04);border:1px solid rgba(37,37,37,.1);transition:background .2s,border-color .2s,color .2s;}
+.collect-item .ci-icon{font-size:9px;line-height:1;opacity:.75;}
+.collect-item.active{color:#8a5a28;background:#fff6eb;border-color:rgba(201,149,106,.45);}
+.collect-item.active .ci-icon{color:var(--accent);opacity:1;}
+.collect-item.done{color:#2d8650;background:#eef9f0;border-color:rgba(46,153,89,.35);}
+.collect-item.done .ci-icon{opacity:1;}
+.collect-item.flash{animation:collectPop .45s ease;}
+@keyframes collectPop{40%{transform:scale(1.06);}}
 @media (max-width:640px){
   .game-header .title{font-size:13px;}
   .game-header .hint{font-size:11px;}

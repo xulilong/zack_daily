@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>MT大冒险 · 梦醒了</title>
+<title>MT大冒险 · CEO就职</title>
+<link rel="preload" as="image" href="../assets/images/index.png">
 <style>
   :root{
     --panel:rgba(18,32,48,.78);
@@ -14,6 +15,8 @@
     --btn-hover:#d64535;
     --btn-shadow:rgba(120,24,16,.45);
     --btn-ghost:rgba(255,255,255,.14);
+    --gold:#e8b84a;
+    --gold-dark:#a87830;
   }
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
   html,body{height:100%;}
@@ -22,17 +25,82 @@
     background:#0e1620;color:var(--text);overflow:hidden;
   }
 
-  .page{
-    position:relative;width:100%;height:100%;min-height:100vh;min-height:100dvh;
-    overflow:hidden;cursor:pointer;
+  .ceremony-screen{
+    position:fixed;inset:0;z-index:30;
+    background:
+      radial-gradient(ellipse at 50% 18%,rgba(232,184,74,.18) 0%,transparent 55%),
+      radial-gradient(ellipse at 50% 100%,#2a2218 0%,#12100c 55%,#080706 100%);
+    display:flex;align-items:center;justify-content:center;
+    padding:20px 16px calc(20px + env(safe-area-inset-bottom));
+    transition:opacity .9s ease;
   }
+  .ceremony-screen.story-mode{
+    z-index:1;pointer-events:none;align-items:flex-end;padding-bottom:0;
+  }
+  .ceremony-screen.hide{opacity:0;pointer-events:none;}
+
+  .ceremony-form{
+    width:min(92vw,440px);padding:clamp(24px,5vw,36px) clamp(22px,4vw,32px);
+    background:rgba(18,32,48,.88);border:1px solid rgba(232,184,74,.28);
+    border-radius:20px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+    box-shadow:0 20px 60px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.06);
+    text-align:center;
+    animation:fadeUp .7s ease both;
+  }
+  .ceremony-form.hide{display:none;}
+  .ceremony-tag{
+    display:inline-block;font-size:11px;font-weight:700;letter-spacing:.14em;
+    color:var(--gold);margin-bottom:14px;
+  }
+  .ceremony-form h1{
+    font-size:clamp(20px,4.2vw,26px);font-weight:800;line-height:1.35;
+    margin-bottom:10px;letter-spacing:.04em;
+  }
+  .ceremony-form p{
+    font-size:clamp(13px,2.6vw,15px);color:var(--muted);line-height:1.65;
+    margin-bottom:22px;
+  }
+  .name-field{
+    width:100%;padding:12px 16px;margin-bottom:8px;
+    border:2px solid rgba(255,255,255,.14);border-radius:12px;
+    background:rgba(255,255,255,.06);color:var(--text);
+    font-size:16px;font-weight:600;font-family:inherit;
+    outline:none;transition:border-color .2s, background .2s;
+  }
+  .name-field:focus{border-color:rgba(232,184,74,.55);background:rgba(255,255,255,.1);}
+  .name-field::placeholder{color:rgba(244,246,248,.35);font-weight:500;}
+  .name-hint{
+    min-height:18px;font-size:12px;color:#e8a090;margin-bottom:16px;
+  }
+  .confetti{
+    position:fixed;inset:0;pointer-events:none;z-index:25;overflow:hidden;
+  }
+  .confetti i{
+    position:absolute;top:-12px;width:8px;height:12px;border-radius:2px;
+    opacity:.9;animation:confettiFall linear forwards;
+  }
+  @keyframes confettiFall{
+    to{transform:translateY(110vh) rotate(720deg);opacity:0;}
+  }
+
+  .page{
+    position:fixed;inset:0;z-index:2;
+    width:100%;height:100%;min-height:100vh;min-height:100dvh;
+    overflow:hidden;cursor:pointer;opacity:0;
+    transition:opacity .35s ease;
+    pointer-events:none;
+  }
+  .page.show{opacity:1;pointer-events:auto;z-index:40;}
+  .page.no-cursor{cursor:default;}
 
   .bg{
     position:absolute;inset:0;width:100%;height:100%;
     object-fit:cover;object-position:center center;
     user-select:none;pointer-events:none;
-    transition:filter 1.2s ease, transform .6s ease;
+    transition:filter 1.2s ease, transform .6s ease, opacity .8s ease;
+    opacity:0;
   }
+  .page.dream .bg{opacity:1;}
   .page.dim .bg{filter:brightness(.55) saturate(.85);}
   .page.alarm .bg{animation:shake .12s infinite;}
 
@@ -41,7 +109,9 @@
     background:
       linear-gradient(180deg,rgba(8,14,22,.18) 0%,rgba(8,14,22,0) 40%,rgba(8,14,22,.35) 75%,rgba(8,14,22,.78) 100%);
     transition:opacity .8s ease;
+    opacity:0;
   }
+  .page.dream .shade{opacity:1;}
 
   .flash{
     position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:5;
@@ -53,7 +123,7 @@
     position:absolute;top:18%;left:50%;transform:translateX(-50%);
     padding:10px 22px;background:#fff8ea;border:2px solid rgba(37,37,37,.85);
     border-radius:8px;color:#252525;font-weight:800;font-size:clamp(15px,3vw,18px);
-    letter-spacing:.08em;opacity:0;z-index:3;transition:opacity 1s ease;
+    letter-spacing:.08em;opacity:0;z-index:3;transition:opacity 1s ease, transform 1s ease;
     box-shadow:0 8px 24px rgba(0,0,0,.25);
   }
   .badge.show{opacity:1;}
@@ -82,9 +152,10 @@
     box-shadow:0 -4px 32px rgba(0,0,0,.28),0 16px 48px rgba(0,0,0,.22);
     text-align:center;
     opacity:0;transform:translateY(20px);
-    transition:opacity .65s ease, transform .65s ease;
+    transition:opacity .45s ease, transform .45s ease;
   }
   .panel.show{opacity:1;transform:translateY(0);}
+  .panel.instant{transition:none;opacity:1;transform:none;}
 
   .line{
     font-size:clamp(16px,3.2vw,22px);font-weight:700;line-height:1.75;
@@ -97,9 +168,7 @@
     letter-spacing:.04em;
   }
 
-  .actions{
-    display:none;flex-wrap:wrap;gap:10px;justify-content:center;
-  }
+  .actions{display:none;flex-wrap:wrap;gap:10px;justify-content:center;}
   .actions.show{display:flex;}
 
   .btn{
@@ -119,6 +188,11 @@
     transform:translateY(4px);
     box-shadow:0 2px 0 var(--btn-shadow),0 8px 16px rgba(0,0,0,.22);
   }
+  .btn-gold{
+    background:linear-gradient(180deg,#f0cc62 0%,var(--gold-dark) 100%);
+    color:#252525;box-shadow:0 6px 0 rgba(80,56,16,.45),0 14px 28px rgba(0,0,0,.28);
+  }
+  .btn-gold:active{transform:translateY(4px);}
   .btn-ghost{
     background:var(--btn-ghost);color:var(--text);
     border:1px solid rgba(255,255,255,.18);
@@ -129,7 +203,9 @@
     padding:8px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.22);
     background:rgba(0,0,0,.28);color:var(--muted);font-size:13px;font-weight:600;
     cursor:pointer;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+    opacity:0;pointer-events:none;transition:opacity .4s;
   }
+  .skip.show{opacity:1;pointer-events:auto;}
   .skip.hide{opacity:0;pointer-events:none;}
 
   .tap-hint{
@@ -152,13 +228,26 @@
 </style>
 </head>
 <body>
+<div class="confetti" id="confetti" aria-hidden="true"></div>
+
+<div class="ceremony-screen" id="ceremonyScreen">
+  <form class="ceremony-form" id="ceremonyForm">
+    <div class="ceremony-tag">关卡5 · 通关</div>
+    <h1>CEO 就职仪式</h1>
+    <p>你终于坐进了 CEO 的椅子。<br>在掌声响起之前，请留下你的名字。</p>
+    <input class="name-field" id="ceoName" type="text" maxlength="12" placeholder="输入你的姓名" autocomplete="name">
+    <div class="name-hint" id="nameHint"></div>
+    <button type="submit" class="btn btn-gold">我，就任 CEO</button>
+  </form>
+</div>
+
 <div class="page" id="page">
   <img class="bg" id="bg" src="../assets/images/index.png" alt="Zack 的卧室">
   <div class="shade" aria-hidden="true"></div>
   <div class="flash" id="flash"></div>
   <div class="badge" id="badge">CEO</div>
   <div class="clock" id="clock">7:15</div>
-  <div class="tap-hint" id="tapHint">点击继续</div>
+  <div class="tap-hint" id="tapHint">点击继续 · 可加速</div>
 
   <button type="button" class="skip" id="btnSkip">跳过</button>
 
@@ -175,17 +264,24 @@
 </div>
 
 <script>
-const STEPS=[
-  {flash:true, main:"👏 掌声雷动……", sub:"", dim:false, alarm:false, badge:false, clock:false, auto:3000},
-  {flash:false, main:"⏰ 闹钟响了", sub:"", dim:true, alarm:true, badge:false, clock:false, auto:3000, tone:"alarm"},
-  {flash:false, main:"7:15", sub:"卧室。阳光还没完全进来。", dim:false, alarm:false, badge:false, clock:true, auto:3000},
-  {flash:false, main:"原来一切都是一场梦。", sub:"", dim:false, alarm:false, badge:false, clock:true, auto:3000},
-  {flash:false, main:"", sub:"", dim:false, alarm:false, badge:true, clock:true, auto:3000},
-  {flash:false, main:"上班去了。", sub:"Zack 拎起包，像什么都没发生过。", dim:false, alarm:false, badge:true, clock:true, badgeFade:true, auto:3000},
-  {flash:false, main:"班上多了，副作用就是喜欢做梦。", sub:"", dim:false, alarm:false, badge:false, clock:false, auto:0, final:true},
-];
+let STEPS=[];
+let ceoName="";
 
-let actx=null, soundOn=true, stepIdx=-1, timer=null, done=false;
+function buildSteps(name){
+  return [
+    {main:`${name}，请上台。`, sub:"董事会会议室 · 全体起立", ceremony:true, badge:false, auto:2200},
+    {main:`即日起，${name} 正式出任 CEO。`, sub:"👏 掌声经久不息……", ceremony:true, badge:true, badgeText:`${name} · CEO`, tone:"applause", confetti:true, auto:2600},
+    {main:"👏 掌声雷动……", sub:"一切看起来都无比真实。", ceremony:true, badge:true, badgeText:`${name} · CEO`, auto:2200},
+    {flash:true, main:"⏰ 闹钟响了", sub:"", dream:true, dim:true, alarm:true, badge:false, clock:false, auto:2400, tone:"alarm"},
+    {flash:false, main:"7:15", sub:"卧室。阳光还没完全进来。", dream:true, dim:false, alarm:false, badge:false, clock:true, auto:3000},
+    {flash:false, main:`原来，${name} 的 CEO 就职…`, sub:"只是一场梦。", dream:true, dim:false, alarm:false, badge:false, clock:true, auto:3200},
+    {flash:false, main:"", sub:"", dream:true, dim:false, alarm:false, badge:true, badgeText:"打工人 · 迟到预备", clock:true, auto:3000},
+    {flash:false, main:"上班去了。", sub:`${name} 拎起包，像什么都没发生过。`, dream:true, dim:false, alarm:false, badge:true, clock:true, badgeFade:true, auto:3000},
+    {flash:false, main:"班上多了，副作用就是喜欢做梦。", sub:"", dream:true, dim:false, alarm:false, badge:false, clock:false, auto:0, final:true},
+  ];
+}
+
+let actx=null, soundOn=true, stepIdx=-1, timer=null, done=false, storyStarted=false;
 
 function ensureAudio(){
   if(!actx){ try{ actx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} }
@@ -203,8 +299,16 @@ function playAlarm(){
   if(!soundOn) return;
   [880,880,660,660].forEach((f,i)=>setTimeout(()=>tone(f,0.18,"square",0.1),i*220));
 }
+function playApplause(){
+  if(!soundOn) return;
+  [523,659,784,880].forEach((f,i)=>setTimeout(()=>tone(f,0.1,"triangle",0.08),i*90));
+}
 
 const page=document.getElementById("page");
+const ceremonyScreen=document.getElementById("ceremonyScreen");
+const ceremonyForm=document.getElementById("ceremonyForm");
+const ceoNameInput=document.getElementById("ceoName");
+const nameHint=document.getElementById("nameHint");
 const flash=document.getElementById("flash");
 const panel=document.getElementById("panel");
 const lineMain=document.getElementById("lineMain");
@@ -215,23 +319,43 @@ const actions=document.getElementById("actions");
 const stage=document.getElementById("stage");
 const tapHint=document.getElementById("tapHint");
 const btnSkip=document.getElementById("btnSkip");
+const confettiEl=document.getElementById("confetti");
 
 function clearTimer(){
   if(timer){ clearTimeout(timer); timer=null; }
 }
 
-function applyStep(s){
+function spawnConfetti(){
+  const colors=["#e8b84a","#c0392b","#fff8ea","#7ec87a","#d4a574"];
+  confettiEl.innerHTML="";
+  for(let i=0;i<36;i++){
+    const p=document.createElement("i");
+    p.style.left=(Math.random()*100)+"%";
+    p.style.background=colors[i%colors.length];
+    p.style.animationDuration=(2.2+Math.random()*1.6)+"s";
+    p.style.animationDelay=(Math.random()*0.4)+"s";
+    confettiEl.appendChild(p);
+  }
+  setTimeout(()=>{ confettiEl.innerHTML=""; },4000);
+}
+
+function applyStep(s, instant){
+  if(s.dream){
+    page.classList.add("dream","show");
+    ceremonyScreen.classList.add("hide");
+  }
+  if(s.badgeText) badge.textContent=s.badgeText;
+
   flash.classList.toggle("on",!!s.flash);
   page.classList.toggle("dim",!!s.dim);
   page.classList.toggle("alarm",!!s.alarm);
   clock.classList.toggle("show",!!s.clock);
   badge.classList.toggle("show",!!s.badge);
   badge.classList.toggle("fade-out",false);
-  if(s.badgeFade){
-    setTimeout(()=>badge.classList.add("fade-out"),1200);
-  }
-
+  if(s.badgeFade) setTimeout(()=>badge.classList.add("fade-out"),1200);
   if(s.tone==="alarm") playAlarm();
+  if(s.tone==="applause") playApplause();
+  if(s.confetti) spawnConfetti();
 
   if(s.final){
     lineMain.className="line title";
@@ -239,8 +363,10 @@ function applyStep(s){
     lineSub.style.display="none";
     actions.classList.add("show");
     stage.classList.add("interactive");
+    page.classList.add("no-cursor");
     tapHint.classList.remove("show");
     btnSkip.classList.add("hide");
+    panel.classList.remove("instant");
     panel.classList.add("show");
     done=true;
     return;
@@ -261,35 +387,70 @@ function applyStep(s){
     lineSub.style.display="none";
   }
 
-  panel.classList.remove("show");
-  requestAnimationFrame(()=>panel.classList.add("show"));
+  panel.classList.remove("show","instant");
+  if(instant){
+    panel.classList.add("show","instant");
+  } else {
+    requestAnimationFrame(()=>panel.classList.add("show"));
+  }
   tapHint.classList.add("show");
 }
 
-function nextStep(){
+function nextStep(instant){
   if(done) return;
   ensureAudio();
   clearTimer();
   stepIdx++;
   if(stepIdx>=STEPS.length) return;
-  const s=STEPS[stepIdx];
-  applyStep(s);
-  if(s.auto>0){
-    timer=setTimeout(nextStep,s.auto);
-  }
+  applyStep(STEPS[stepIdx], !!instant);
+  if(STEPS[stepIdx].auto>0) timer=setTimeout(()=>nextStep(false), STEPS[stepIdx].auto);
+}
+
+function startStory(name){
+  ceoName=name;
+  STEPS=buildSteps(name);
+  storyStarted=true;
+  ceremonyForm.classList.add("hide");
+  ceremonyScreen.classList.add("story-mode");
+  page.classList.add("show");
+  btnSkip.classList.add("show");
+  document.title="MT大冒险 · 就职与梦醒";
+  new Image().src="../assets/images/index.png";
+  stepIdx=-1;
+  nextStep(true);
 }
 
 function skipToEnd(){
+  if(!storyStarted) return;
   clearTimer();
   stepIdx=STEPS.length-2;
   done=false;
   badge.classList.remove("show","fade-out");
+  ceremonyScreen.classList.add("hide");
+  page.classList.add("dream","show");
   nextStep();
 }
 
+ceremonyForm.addEventListener("submit",(e)=>{
+  e.preventDefault();
+  ensureAudio();
+  const raw=ceoNameInput.value.trim();
+  if(!raw){
+    nameHint.textContent="请先输入姓名";
+    ceoNameInput.focus();
+    return;
+  }
+  if(raw.length>12){
+    nameHint.textContent="姓名最多 12 个字";
+    return;
+  }
+  nameHint.textContent="";
+  startStory(raw);
+});
+
 page.addEventListener("click",(e)=>{
+  if(!storyStarted||done) return;
   if(e.target.closest(".btn")||e.target.closest(".skip")) return;
-  if(done) return;
   nextStep();
 });
 btnSkip.addEventListener("click",(e)=>{ e.stopPropagation(); skipToEnd(); });
@@ -300,7 +461,7 @@ document.getElementById("btnSleep").addEventListener("click",(e)=>{
   e.stopPropagation(); location.href="mt-level1-demo.html";
 });
 
-nextStep();
+ceoNameInput.focus();
 </script>
 </body>
 </html>

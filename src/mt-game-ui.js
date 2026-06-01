@@ -525,6 +525,12 @@ window.MTUI = (function(){
 
   function init(options){
     opts = options || {};
+    if(window.MTAnalytics){
+      MTAnalytics.init({ page: location.pathname.split("/").pop(), levelId: opts.levelId || null });
+    }
+    if(typeof opts.guardLevel === "number" && window.MTProgress){
+      if(!MTProgress.guardLevel(opts.guardLevel)) return;
+    }
     hintCurrent = opts.defaultHint || "";
     const homeBtn = $("btn_home");
     const pauseBtn = $("btn_pause");
@@ -546,9 +552,6 @@ window.MTUI = (function(){
     });
     if(typeof opts.onInit === "function") opts.onInit();
     setupCollectibles(opts.collectibles);
-    if(window.MTAnalytics){
-      MTAnalytics.init({ page: location.pathname.split("/").pop(), levelId: opts.levelId || null });
-    }
     showStart();
   }
 

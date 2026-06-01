@@ -91,10 +91,7 @@
 </div>
 
 <script src="mt-level-progress.js"></script>
-<script>
-  window.MT_ANALYTICS_API = "https://zack-game.onrender.com/api/analytics";
-  window.MT_LEADERBOARD_API = "https://zack-game.onrender.com/api/leaderboard";
-</script>
+<script src="mt-game-config.js"></script>
 <script src="mt-game-analytics.js"></script>
 <script src="mt-game-bgm.js"></script>
 <script src="mt-leaderboard.js"></script>
@@ -1048,9 +1045,9 @@ function loop(t){
 }
 
 MTUI.bindKeys(keys, doJump, ensureAudio);
-MTProgress.guardLevel(1);
 MTUI.init({
   levelId: 1,
+  guardLevel: 1,
   levelTag:"关卡1",
   homeUrl:"../index.html",
   defaultHint:"又睡过头了。",

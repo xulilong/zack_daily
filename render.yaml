@@ -15,3 +15,5 @@ services:
       # 在 Render Dashboard 手动添加（Upstash 免费库 → REST API）：
       # UPSTASH_REDIS_REST_URL
       # UPSTASH_REDIS_REST_TOKEN
+      # 跨域（GitHub Pages）：不设或设为 * 均可；若限定域名：
+      # CORS_ORIGIN=https://xulilong.github.io

@@ -111,27 +111,46 @@ window.MTAnalytics = (function(){
 
     const url = apiBase() + "/track";
     const body = JSON.stringify(payload);
+    const maxAttempts = 4;
 
-    try{
-      if(navigator.sendBeacon){
-        const blob = new Blob([body], { type: "application/json" });
-        if(navigator.sendBeacon(url, blob)) return;
-      }
-    }catch(e){}
+    function beaconFallback(){
+      try{
+        if(navigator.sendBeacon){
+          const blob = new Blob([body], { type: "application/json" });
+          navigator.sendBeacon(url, blob);
+        }
+      }catch(e){}
+    }
 
-    fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body,
-      keepalive: true
-    }).catch(() => {});
+    function post(attempt){
+      const delay = attempt === 0 ? 0 : Math.min(2000 * attempt, 8000);
+      setTimeout(() => {
+        fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body,
+          keepalive: true,
+          mode: "cors"
+        }).then(res => {
+          if(!res.ok && attempt + 1 < maxAttempts) post(attempt + 1);
+        }).catch(() => {
+          if(attempt + 1 < maxAttempts) post(attempt + 1);
+          else beaconFallback();
+        });
+      }, delay);
+    }
+
+    post(0);
   }
 
+  let inited = false;
   function init(cfg){
     cfg = cfg || {};
     page = cfg.page || location.pathname.split("/").pop() || "unknown";
     levelId = cfg.levelId ?? null;
     if(cfg.enabled === false) enabled = false;
+    if(inited) return;
+    inited = true;
     track("page_view", {
       referrer: document.referrer || null,
       title: document.title || null

@@ -119,10 +119,7 @@
 </div>
 
 <script src="mt-level-progress.js"></script>
-<script>
-  window.MT_ANALYTICS_API = "https://zack-game.onrender.com/api/analytics";
-  window.MT_LEADERBOARD_API = "https://zack-game.onrender.com/api/leaderboard";
-</script>
+<script src="mt-game-config.js"></script>
 <script src="mt-game-analytics.js"></script>
 <script src="mt-game-bgm.js"></script>
 <script src="mt-leaderboard.js"></script>
@@ -1706,7 +1703,7 @@ function drawSticky(e){
   rline(e.x+6,e.y+4,e.x+e.w-6,e.y+4);
   rline(e.x+6,e.y+8,e.x+e.w-10,e.y+8);
   ctx.fillStyle="rgba(37,37,37,.45)"; ctx.font="600 8px PingFang SC,sans-serif"; ctx.textAlign="center";
-  ctx.fillText("改",e.x+e.w/2,e.y+e.h-2); ctx.textAlign="left";
+  ctx.fillText("便签",e.x+e.w/2,e.y+e.h-2); ctx.textAlign="left";
 }
 
 function drawProp(p){
@@ -1783,9 +1780,9 @@ function loop(t){
 
 /* ===== 输入 & UI ===== */
 MTUI.bindKeys(keys, doJump, ensureAudio, doSpit);
-MTProgress.guardLevel(3);
 MTUI.init({
   levelId: 3,
+  guardLevel: 3,
   levelTag:"关卡3",
   homeUrl:"../index.html",
   defaultHint:"秘书：先拿润喉糖，再清插话。",

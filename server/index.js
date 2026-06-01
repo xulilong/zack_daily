@@ -167,11 +167,34 @@ function aggregateStats(events){
 
 const app = express();
 
+// GitHub Pages 游戏页：https://xulilong.github.io/zack_daily/
+const DEFAULT_ALLOWED_ORIGINS = ["https://xulilong.github.io"];
+
+function resolveCorsOrigin(req){
+  const origin = req.headers.origin;
+  const env = process.env.CORS_ORIGIN;
+  if(env === "*") return "*";
+  if(env){
+    const list = env.split(",").map(s => s.trim()).filter(Boolean);
+    if(origin && list.includes(origin)) return origin;
+    return list[0] || "*";
+  }
+  if(!origin) return "*";
+  if(DEFAULT_ALLOWED_ORIGINS.includes(origin)) return origin;
+  return "*";
+}
+
+function applyApiCors(req, res){
+  const allowOrigin = resolveCorsOrigin(req);
+  res.setHeader("Access-Control-Allow-Origin", allowOrigin);
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  if(allowOrigin !== "*") res.setHeader("Vary", "Origin");
+}
+
 app.use((req, res, next) => {
   if(req.path.startsWith("/api/analytics") || req.path.startsWith("/api/leaderboard")){
-    res.setHeader("Access-Control-Allow-Origin", process.env.CORS_ORIGIN || "*");
-    res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+    applyApiCors(req, res);
     if(req.method === "OPTIONS") return res.sendStatus(204);
   }
   next();

@@ -81,10 +81,9 @@
       <div class="group">
         <div class="key" data-k="left">◀</div>
         <div class="key" data-k="right">▶</div>
-        <div class="key" data-k="down">▼</div>
       </div>
       <div class="group">
-        <div class="key run" data-k="run">跑</div>
+        <div class="key" data-k="down">▼</div>
         <div class="key jump" data-k="jump">▲</div>
       </div>
     </div>
@@ -775,17 +774,32 @@ function drawPuddle(e){
 function drawBadge(e){
   const cx=e.x+e.w/2, bob=Math.sin(T*4)*2, y=e.y+bob;
   const img=bgImages.prop_badge;
+  // Draw the sprite (if present), but ALWAYS overlay a clear "badge" silhouette.
   if(img){
     const dw=e.w+4, dh=e.h+10;
+    ctx.save();
+    ctx.globalAlpha=0.9;
     ctx.drawImage(img, cx-dw/2, y-2, dw, dh);
-    return;
+    ctx.restore();
   }
-  ctx.fillStyle="#fff"; ctx.strokeStyle=INK; ctx.lineWidth=2;
-  rrect(cx-14,y,28,36,4); fillStroke();
-  ctx.fillStyle=INK; ctx.font="800 9px PingFang SC,sans-serif"; ctx.textAlign="center";
-  ctx.fillText("工牌",cx,y+22); ctx.textAlign="left";
+
+  // Lanyard / clip
   ctx.strokeStyle=INK; ctx.lineWidth=1.5;
   ctx.beginPath(); ctx.moveTo(cx,y+36); ctx.lineTo(cx,y+44); ctx.stroke();
+  ctx.fillStyle=INK;
+  ctx.beginPath(); ctx.arc(cx,y+36,2.2,0,7); ctx.fill();
+
+  // Card body (slightly transparent so it reads as "transparent background")
+  ctx.fillStyle="rgba(255,255,255,.18)"; ctx.strokeStyle=INK; ctx.lineWidth=2;
+  rrect(cx-14,y,28,36,4); fillStroke();
+
+  // Inner header strip to make it look like a real ID card
+  ctx.fillStyle="rgba(37,37,37,.10)";
+  rrect(cx-12,y+3,24,7,2); ctx.fill();
+
+  // Label
+  ctx.fillStyle=INK; ctx.font="800 9px PingFang SC,sans-serif"; ctx.textAlign="center";
+  ctx.fillText("工牌",cx,y+22); ctx.textAlign="left";
 }
 
 function drawTurnstile(e){

@@ -774,8 +774,8 @@ function win(){
   setTimeout(()=>{
     MTUI.showWin({
       levelId: 4,
-      title:"送到了！",
-      body:`关卡4 · 食堂 通关。<br>MT币：${score}<br><em>CEO专座上的「国宴」——一桶泡面，加蛋。</em><small>Zack 的 CEO 幻想，又破功了。</small>`,
+      title:"终于送到了！",
+      body:`<em>CEO专座上的「国宴」—— 一桶泡面，加蛋。</em><small>CEO的幻想，又破功了。</small>`,
       nextUrl:"mt-level5-demo.html",
       nextLabel:"下一关"
     });
@@ -1738,7 +1738,7 @@ MTUI.init({
   homeUrl:"../index.html",
   defaultHint:"12:30 食堂高峰",
   startTitle:"食堂高峰",
-  startBody:"想办法把盘子顺利回收。<br>端盘不能跑、不能上平台 · 排队区墙边藏着人事部？ · <kbd>Esc</kbd> 暂停",
+  startBody:"想办法把盘子顺利回收。<br>端盘不能跑、不能上平台 · 排队区墙边藏着人事部，里面可能有惊喜",
   startBtn:"去排队",
   ensureAudio,
   toggleSound(){ soundOn=!soundOn; if(window.MTBGM) MTBGM.setSoundOn(soundOn); return soundOn; },

@@ -859,7 +859,7 @@ function drawEnemyVector(e,facing){
   ctx.beginPath(); ctx.moveTo(-5-walk*4,0); ctx.lineTo(-5-walk*4+facing*5,0); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(5,-12); ctx.lineTo(5+walk*4,-1); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(5+walk*4,0); ctx.lineTo(5+walk*4+facing*5,0); ctx.stroke();
-  // 身体（比 Zack 瘦一点、浅色衫）
+
   ctx.fillStyle="#fff"; ctx.strokeStyle=BLK; ctx.lineWidth=2;
   ctx.beginPath();
   ctx.moveTo(-8,-36); ctx.quadraticCurveTo(-10,-24,-7,-12);
@@ -875,7 +875,7 @@ function drawEnemyVector(e,facing){
   // 头
   ctx.fillStyle="#fff"; ctx.strokeStyle=BLK; ctx.lineWidth=2.5;
   ctx.beginPath(); ctx.arc(0,-40,9,0,7); ctx.fill(); ctx.stroke();
-  // 脸（无眼镜，和 Zack 区分）
+  // 脸（无眼镜）
   ctx.fillStyle=BLK;
   ctx.beginPath(); ctx.arc(-3,-41,1.5,0,7); ctx.arc(3,-41,1.5,0,7); ctx.fill();
   ctx.beginPath(); ctx.moveTo(-3,-36); ctx.quadraticCurveTo(0,-35,3,-36); ctx.stroke();

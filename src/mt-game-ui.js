@@ -94,7 +94,7 @@ window.MTUI = (function(){
     showModal({
       tag: "暂停",
       title: "休息一下",
-      body: "Zack 喘口气。",
+      body: "",
       actions: [
         { id: "resume", label: "继续", kind: "btn-primary", onClick: resume },
         { id: "retry", label: "重来", kind: "btn-secondary", onClick: retry },

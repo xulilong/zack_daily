@@ -71,6 +71,7 @@ function aggregateStats(events){
   const eventCounts = {};
   const pages = {};
   const recent = events.slice(-100).reverse();
+  const users = {};
 
   for(const ev of events){
     if(ev.sessionId) totals.sessions.add(ev.sessionId);
@@ -84,6 +85,36 @@ function aggregateStats(events){
 
     const levelId = ev.levelId || ev.props?.levelId;
     const bucket = levelId && levels[levelId] ? levels[levelId] : null;
+
+    // 用户明细（按 visitorId 聚合）
+    if(ev.visitorId){
+      const u = users[ev.visitorId] || (users[ev.visitorId] = {
+        visitorId: ev.visitorId,
+        firstSeen: ev.ts,
+        lastSeen: ev.ts,
+        sessions: new Set(),
+        events: 0,
+        pages: {},
+        lastPage: ev.page || null,
+        lastLevelId: ev.levelId ?? null,
+        lastEvent: ev.event || null,
+        client: null
+      });
+      u.events++;
+      if(ev.sessionId) u.sessions.add(ev.sessionId);
+      if(ev.ts && String(ev.ts).localeCompare(u.firstSeen) < 0) u.firstSeen = ev.ts;
+      if(ev.ts && String(ev.ts).localeCompare(u.lastSeen) > 0){
+        u.lastSeen = ev.ts;
+        u.lastPage = ev.page || null;
+        u.lastLevelId = ev.levelId ?? null;
+        u.lastEvent = ev.event || null;
+        if(ev.props && ev.props.__client) u.client = ev.props.__client;
+      } else {
+        if(!u.client && ev.props && ev.props.__client) u.client = ev.props.__client;
+      }
+      const p = ev.page || "unknown";
+      u.pages[p] = (u.pages[p] || 0) + 1;
+    }
 
     if(bucket){
       if(ev.event === "level_start") bucket.starts++;
@@ -105,6 +136,19 @@ function aggregateStats(events){
     .sort((a, b) => b[1] - a[1])
     .map(([event, count]) => ({ event, count }));
 
+  const userList = Object.values(users).map(u => ({
+    visitorId: u.visitorId,
+    firstSeen: u.firstSeen,
+    lastSeen: u.lastSeen,
+    sessions: u.sessions.size,
+    events: u.events,
+    pages: u.pages,
+    lastPage: u.lastPage,
+    lastLevelId: u.lastLevelId,
+    lastEvent: u.lastEvent,
+    client: u.client
+  })).sort((a, b) => String(b.lastSeen).localeCompare(String(a.lastSeen)));
+
   return {
     generatedAt: new Date().toISOString(),
     totals: {
@@ -116,7 +160,8 @@ function aggregateStats(events){
     levels: levelList,
     topEvents,
     pages,
-    recent
+    recent,
+    users: userList
   };
 }
 

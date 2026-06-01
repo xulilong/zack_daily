@@ -6,6 +6,55 @@ window.MTAnalytics = (function(){
   let levelId = null;
   let enabled = true;
 
+  function safeNumber(n){
+    const x = Number(n);
+    return Number.isFinite(x) ? x : null;
+  }
+
+  function getClientSnapshot(){
+    // “用户能获取到的信息”里，挑常用且稳定的字段；避免读取隐私敏感/权限相关信息。
+    try{
+      const nav = navigator || {};
+      const scr = screen || {};
+      const conn = nav.connection || nav.mozConnection || nav.webkitConnection || null;
+      const tz = (() => { try{ return Intl.DateTimeFormat().resolvedOptions().timeZone || null; }catch(e){ return null; } })();
+      return {
+        href: (location && location.href) ? String(location.href) : null,
+        origin: (location && location.origin) ? String(location.origin) : null,
+        userAgent: nav.userAgent ? String(nav.userAgent) : null,
+        language: nav.language ? String(nav.language) : null,
+        languages: Array.isArray(nav.languages) ? nav.languages.slice(0, 8).map(String) : null,
+        platform: nav.platform ? String(nav.platform) : null,
+        cookieEnabled: typeof nav.cookieEnabled === "boolean" ? nav.cookieEnabled : null,
+        online: typeof nav.onLine === "boolean" ? nav.onLine : null,
+        timeZone: tz,
+        timeZoneOffsetMin: safeNumber(new Date().getTimezoneOffset()),
+        screen: {
+          w: safeNumber(scr.width),
+          h: safeNumber(scr.height),
+          availW: safeNumber(scr.availWidth),
+          availH: safeNumber(scr.availHeight),
+          colorDepth: safeNumber(scr.colorDepth),
+          pixelRatio: safeNumber(window.devicePixelRatio)
+        },
+        viewport: {
+          w: safeNumber(window.innerWidth),
+          h: safeNumber(window.innerHeight)
+        },
+        hardwareConcurrency: safeNumber(nav.hardwareConcurrency),
+        deviceMemory: safeNumber(nav.deviceMemory),
+        connection: conn ? {
+          effectiveType: conn.effectiveType ? String(conn.effectiveType) : null,
+          downlink: safeNumber(conn.downlink),
+          rtt: safeNumber(conn.rtt),
+          saveData: typeof conn.saveData === "boolean" ? conn.saveData : null
+        } : null
+      };
+    }catch(e){
+      return null;
+    }
+  }
+
   function apiBase(){
     if(window.MT_ANALYTICS_API) return String(window.MT_ANALYTICS_API).replace(/\/$/, "");
     if(location.protocol === "http:" || location.protocol === "https:"){
@@ -46,13 +95,18 @@ window.MTAnalytics = (function(){
 
   function track(event, props){
     if(!enabled || !event) return;
+    const client = getClientSnapshot();
+    const mergedProps = {
+      ...(props || {}),
+      ...(client ? { __client: client } : {})
+    };
     const payload = {
       event,
       sessionId: getSessionId(),
       visitorId: getVisitorId(),
       page: page || location.pathname.split("/").pop() || "unknown",
       levelId: levelId ?? props?.levelId ?? null,
-      props: props || {}
+      props: mergedProps
     };
 
     const url = apiBase() + "/track";

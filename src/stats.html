@@ -28,12 +28,14 @@
   }
   .btn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink);}
   .btn-primary{background:var(--accent);color:#fff;}
+  .btn.active{background:var(--ink);color:var(--cream);}
   .card{
     background:var(--cream);border:2px solid var(--ink);border-radius:var(--r);
     box-shadow:var(--shadow);padding:18px 20px;
   }
   .card h2{font-size:15px;margin-bottom:12px;}
   .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;}
+  .two-col{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(260px,.65fr);gap:14px;align-items:start;}
   .stat{
     background:var(--paper);border:1.5px solid rgba(37,37,37,.15);
     border-radius:12px;padding:12px 14px;
@@ -48,12 +50,67 @@
   }
   tbody tr:nth-child(even){background:rgba(250,248,244,.55);}
   tbody tr:hover{background:rgba(201,149,106,.10);}
+  .table-scroll{
+    max-height:420px;
+    overflow:auto;
+    border:1.5px solid rgba(37,37,37,.12);
+    border-radius:12px;
+  }
+  .table-scroll table{min-width:760px;}
+  .pager{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    margin-top:10px;flex-wrap:wrap;font-size:12px;color:var(--muted);
+  }
+  .pager-actions{display:flex;gap:8px;align-items:center;}
   .rate-good{color:var(--good);font-weight:700;}
   .rate-bad{color:var(--bad);font-weight:700;}
+  .funnel{display:flex;flex-direction:column;gap:10px;}
+  .funnel-row{
+    display:grid;grid-template-columns:116px minmax(0,1fr) 86px;gap:10px;align-items:center;
+  }
+  .funnel-name{font-size:12px;font-weight:800;line-height:1.25;}
+  .funnel-name small{display:block;font-size:10px;color:var(--muted);font-weight:700;margin-top:2px;}
+  .funnel-track{
+    position:relative;height:32px;border:1.5px solid rgba(37,37,37,.18);border-radius:10px;
+    background:rgba(250,248,244,.75);overflow:hidden;
+  }
+  .funnel-fill{
+    height:100%;min-width:3px;border-radius:8px;background:linear-gradient(90deg,var(--accent),#e8b84a);
+    box-shadow:inset 0 -2px 0 rgba(37,37,37,.08);
+  }
+  .funnel-label{
+    position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;
+    padding:0 10px;font-size:11px;font-weight:800;color:var(--ink);pointer-events:none;
+  }
+  .funnel-num{text-align:right;font-size:12px;font-weight:800;}
+  .funnel-num small{display:block;color:var(--muted);font-size:10px;font-weight:700;margin-top:2px;}
+  .insights{display:flex;flex-direction:column;gap:8px;}
+  .insight{
+    border:1.5px solid rgba(37,37,37,.15);border-radius:12px;background:var(--paper);
+    padding:10px 12px;font-size:12px;line-height:1.55;
+  }
+  .insight strong{font-size:14px;}
+  .dimension-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;}
+  .dimension-box{
+    background:var(--paper);border:1.5px solid rgba(37,37,37,.15);
+    border-radius:12px;padding:12px 14px;
+  }
+  .dimension-box h3{font-size:13px;margin-bottom:8px;}
+  .dimension-list{display:flex;flex-direction:column;gap:7px;}
+  .dimension-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;font-size:12px;}
+  .dimension-item span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .dimension-item strong{font-size:12px;}
+  .muted{color:var(--muted);}
   .empty{padding:24px;text-align:center;color:var(--muted);font-size:14px;line-height:1.7;}
   .err{color:var(--bad);font-size:13px;line-height:1.6;}
   .recent{font-size:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}
   .recent td{vertical-align:top;}
+  .recent .summary-cell{
+    max-width:360px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
   .tag{
     display:inline-block;padding:2px 8px;border-radius:999px;
     background:var(--paper);border:1px solid rgba(37,37,37,.15);font-size:11px;
@@ -95,6 +152,11 @@
   }
   .row-btn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink);}
   .foot{font-size:11px;color:var(--muted);text-align:center;}
+  @media (max-width:760px){
+    .two-col{grid-template-columns:1fr;}
+    .funnel-row{grid-template-columns:88px minmax(0,1fr);gap:8px;}
+    .funnel-num{grid-column:2;text-align:left;}
+  }
 </style>
 </head>
 <body>
@@ -105,6 +167,8 @@
       <p class="sub" id="meta">加载中…</p>
     </div>
     <div class="actions">
+      <button type="button" class="btn" id="btn_source_online">线上数据</button>
+      <button type="button" class="btn" id="btn_source_local">本地数据</button>
       <button type="button" class="btn" id="btn_refresh">刷新</button>
       <a class="btn" href="../index.html">回首页</a>
     </div>
@@ -115,19 +179,27 @@
     <div class="grid" id="summary_grid"></div>
   </div>
 
+  <div class="card" id="panel_funnel">
+    <h2>关卡用户漏斗</h2>
+    <div class="two-col">
+      <div id="funnel_wrap"></div>
+      <div id="insights_wrap"></div>
+    </div>
+  </div>
+
   <div class="card" id="panel_levels">
-    <h2>关卡数据</h2>
+    <h2>关卡事件数据</h2>
     <div id="levels_table_wrap"></div>
   </div>
 
-  <div class="card" id="panel_events">
-    <h2>事件排行</h2>
-    <div id="events_table_wrap"></div>
+  <div class="card" id="panel_dimensions">
+    <h2>访问维度</h2>
+    <div id="dimensions_wrap"></div>
   </div>
 
-  <div class="card" id="panel_event_dict">
-    <h2>事件名称说明</h2>
-    <div id="event_dict_wrap"></div>
+  <div class="card" id="panel_events">
+    <h2>事件统计</h2>
+    <div id="events_table_wrap"></div>
   </div>
 
   <div class="card" id="panel_users">
@@ -139,15 +211,66 @@
   <div class="card" id="panel_recent">
     <h2>最近事件</h2>
     <div id="recent_table_wrap"></div>
+    <div class="detail" id="recent_detail" style="display:none"></div>
   </div>
 
   <p class="foot">数据文件：<code>data/analytics.jsonl</code> · 本地开发：<code>npm start</code> · 线上：<a href="https://render.com" target="_blank" rel="noopener">Render</a></p>
 </div>
 
+<script src="mt-game-config.js"></script>
 <script>
-const API = (location.protocol === "http:" || location.protocol === "https:")
-  ? location.origin + "/api/analytics/stats"
-  : "http://localhost:3000/api/analytics/stats";
+const SOURCE_LABELS = {
+  online: "线上 Render",
+  local: "本地服务"
+};
+const pageState = {
+  users: 1,
+  recent: 1,
+  events: 1,
+  usersPageSize: 20,
+  recentPageSize: 25,
+  eventsPageSize: 15
+};
+
+function isLocalHost(){
+  return ["localhost", "127.0.0.1", "::1", ""].includes(location.hostname);
+}
+
+function getSource(){
+  const qs = new URLSearchParams(location.search);
+  const source = qs.get("source");
+  if(source === "local" || source === "online") return source;
+  return isLocalHost() ? "online" : "local";
+}
+
+function apiBaseForSource(source){
+  if(source === "online"){
+    const configured = window.MT_ANALYTICS_API || "https://zack-game.onrender.com/api/analytics";
+    return String(configured).replace(/\/$/, "");
+  }
+  if(location.protocol === "http:" || location.protocol === "https:"){
+    return location.origin + "/api/analytics";
+  }
+  return "http://localhost:3000/api/analytics";
+}
+
+function apiUrl(){
+  return apiBaseForSource(getSource()) + "/stats";
+}
+
+function setSource(source){
+  const qs = new URLSearchParams(location.search);
+  qs.set("source", source);
+  location.search = qs.toString();
+}
+
+function syncSourceButtons(){
+  const source = getSource();
+  const online = document.getElementById("btn_source_online");
+  const local = document.getElementById("btn_source_local");
+  if(online) online.classList.toggle("active", source === "online");
+  if(local) local.classList.toggle("active", source === "local");
+}
 
 function fmtTime(iso){
   if(!iso) return "-";
@@ -159,16 +282,110 @@ function pct(n){
   return (n * 100).toFixed(1) + "%";
 }
 
+function fmtDuration(ms){
+  const n = Number(ms) || 0;
+  if(!n) return "-";
+  const sec = Math.round(n / 1000);
+  if(sec < 60) return `${sec}s`;
+  return `${Math.floor(sec / 60)}m ${sec % 60}s`;
+}
+
+function paginate(list, page, pageSize){
+  const total = Array.isArray(list) ? list.length : 0;
+  const pages = Math.max(1, Math.ceil(total / pageSize));
+  const current = Math.min(Math.max(1, page), pages);
+  const start = (current - 1) * pageSize;
+  return { total, pages, current, start, rows: (list || []).slice(start, start + pageSize) };
+}
+
+function renderPager(kind, pageInfo, renderFn){
+  return `<div class="pager">
+    <span>第 ${pageInfo.current}/${pageInfo.pages} 页 · 共 ${pageInfo.total} 条</span>
+    <div class="pager-actions">
+      <button type="button" class="row-btn" data-page-kind="${kind}" data-page-dir="-1" ${pageInfo.current <= 1 ? "disabled" : ""}>上一页</button>
+      <button type="button" class="row-btn" data-page-kind="${kind}" data-page-dir="1" ${pageInfo.current >= pageInfo.pages ? "disabled" : ""}>下一页</button>
+    </div>
+  </div>`;
+}
+
+function bindPager(container, kind, pageInfo, list, renderFn){
+  container.querySelectorAll(`button[data-page-kind="${kind}"]`).forEach(btn => {
+    btn.addEventListener("click", () => {
+      const dir = Number(btn.dataset.pageDir) || 0;
+      pageState[kind] = Math.min(Math.max(1, pageInfo.current + dir), pageInfo.pages);
+      renderFn(list);
+    });
+  });
+}
+
 function renderSummary(data){
   const t = data.totals || {};
+  const fs = data.funnelSummary || {};
   document.getElementById("summary_grid").innerHTML = [
     ["事件总数", t.events || 0],
     ["会话数", t.sessions || 0],
     ["访客数", t.visitors || 0],
-    ["页面浏览", t.pageViews || 0]
+    ["页面浏览", t.pageViews || 0],
+    ["关1开始用户", fs.baseLevel1StartedUsers || 0],
+    ["关1→关5开始", pct(fs.startToLevel5StartRate || 0)]
   ].map(([lbl, val]) =>
     `<div class="stat"><div class="lbl">${lbl}</div><div class="val">${val}</div></div>`
   ).join("");
+}
+
+function renderFunnel(funnel, summary){
+  const wrap = document.getElementById("funnel_wrap");
+  if(!wrap) return;
+  if(funnel === undefined || funnel === null){
+    wrap.innerHTML = '<div class="empty">当前数据源没有返回漏斗字段。请部署新版后端，或切换到“本地数据”查看本地聚合结果。</div>';
+    return;
+  }
+  if(!funnel || !funnel.length){
+    wrap.innerHTML = '<div class="empty">暂无漏斗数据</div>';
+    return;
+  }
+  const base = Math.max(1, funnel[0].startedUsers || funnel[0].reachedUsers || 0);
+  wrap.innerHTML = `<div class="funnel">
+    ${funnel.map(item => {
+      const width = Math.max(3, Math.round((item.startedUsers / base) * 100));
+      const step = item.levelId === 1 ? "入口" : `上关 ${pct(item.stepStartConversion || 0)}`;
+      return `<div class="funnel-row">
+        <div class="funnel-name">关卡${item.levelId}<small>${safeText(item.name)}</small></div>
+        <div class="funnel-track">
+          <div class="funnel-fill" style="width:${Math.min(100, width)}%"></div>
+          <div class="funnel-label"><span>开始 ${item.startedUsers}</span><span>通关 ${item.wonUsers}</span></div>
+        </div>
+        <div class="funnel-num">${pct(item.retentionFromLevel1Start || 0)}<small>${step}</small></div>
+      </div>`;
+    }).join("")}
+  </div>
+  <div class="sub" style="margin-top:10px">口径：按 visitorId 去重；无 visitorId 时回退 sessionId。漏斗主条使用“关卡开始用户”，不是事件次数。</div>`;
+}
+
+function renderInsights(data){
+  const wrap = document.getElementById("insights_wrap");
+  if(!wrap) return;
+  const funnel = data.levelFunnel || [];
+  const summary = data.funnelSummary || {};
+  if(!funnel.length){
+    wrap.innerHTML = "";
+    return;
+  }
+  const biggest = summary.biggestDropoff;
+  const weakestWin = funnel.slice().filter(x => x.startedUsers > 0)
+    .sort((a,b) => (a.winRateFromStart || 0) - (b.winRateFromStart || 0))[0];
+  const final = funnel[funnel.length - 1] || {};
+  const observations = [
+    `<div class="insight"><strong>${pct(summary.startToLevel5StartRate || 0)}</strong><br><span class="muted">从第一关开始到第五关开始的用户留存。</span></div>`,
+    `<div class="insight"><strong>${pct(summary.startToLevel5WinRate || 0)}</strong><br><span class="muted">从第一关开始到最终通关第五关的用户比例。</span></div>`
+  ];
+  if(biggest){
+    observations.push(`<div class="insight"><strong>最大流失：关${biggest.fromLevelId} → 关${biggest.toLevelId}</strong><br><span class="muted">少了 ${biggest.lostUsers} 人，相邻转化 ${pct(biggest.conversion || 0)}。</span></div>`);
+  }
+  if(weakestWin){
+    observations.push(`<div class="insight"><strong>最难通关：关${weakestWin.levelId}</strong><br><span class="muted">${safeText(weakestWin.name)}，去重用户通关率 ${pct(weakestWin.winRateFromStart || 0)}。</span></div>`);
+  }
+  wrap.innerHTML = `<div class="insights">${observations.join("")}</div>`;
 }
 
 function renderLevels(levels){
@@ -179,18 +396,50 @@ function renderLevels(levels){
   }
   wrap.innerHTML = `<table>
     <thead><tr>
-      <th>关卡</th><th>开始</th><th>通关</th><th>失败</th><th>重试</th><th>续命</th><th>通关率</th>
+      <th>关卡</th><th>开始</th><th>通关</th><th>失败</th><th>死亡</th><th>帮助</th><th>重试</th><th>续命</th><th>通关率</th><th>失败率</th><th>平均通关</th><th>平均失败</th>
     </tr></thead>
     <tbody>${levels.map(lv => `<tr>
       <td><strong>${lv.levelId}</strong> ${lv.name}</td>
       <td>${lv.starts}</td>
       <td>${lv.wins}</td>
       <td>${lv.fails}</td>
+      <td>${lv.deaths || 0}</td>
+      <td>${lv.helpOpens || 0}</td>
       <td>${lv.retries}</td>
       <td>${lv.coinContinues}</td>
       <td class="${lv.winRate >= 0.5 ? "rate-good" : "rate-bad"}">${pct(lv.winRate || 0)}</td>
+      <td class="${lv.failRate >= 0.5 ? "rate-bad" : ""}">${pct(lv.failRate || 0)}</td>
+      <td>${fmtDuration(lv.avgWinDurationMs)}</td>
+      <td>${fmtDuration(lv.avgFailDurationMs)}</td>
     </tr>`).join("")}</tbody>
   </table>`;
+}
+
+function renderDimensions(dimensions){
+  const wrap = document.getElementById("dimensions_wrap");
+  if(!wrap) return;
+  if(!dimensions){
+    wrap.innerHTML = '<div class="empty">当前数据源暂无访问维度数据。</div>';
+    return;
+  }
+  const groups = [
+    ["设备", dimensions.devices],
+    ["浏览器", dimensions.browsers],
+    ["来源", dimensions.referrers],
+    ["页面", dimensions.pages],
+    ["语言", dimensions.languages],
+    ["时区", dimensions.timeZones]
+  ];
+  wrap.innerHTML = `<div class="dimension-grid">
+    ${groups.map(([title, list]) => `<div class="dimension-box">
+      <h3>${title}</h3>
+      <div class="dimension-list">
+        ${(list && list.length ? list : [{ name: "-", count: 0 }]).map(item => `
+          <div class="dimension-item"><span title="${safeText(item.name)}">${safeText(item.name)}</span><strong>${item.count}</strong></div>
+        `).join("")}
+      </div>
+    </div>`).join("")}
+  </div>`;
 }
 
 function renderTopEvents(list){
@@ -199,54 +448,114 @@ function renderTopEvents(list){
     wrap.innerHTML = '<div class="empty">暂无事件</div>';
     return;
   }
-  wrap.innerHTML = `<table>
-    <thead><tr><th>事件</th><th>次数</th></tr></thead>
-    <tbody>${list.map(item => {
+  const pageInfo = paginate(list, pageState.events, pageState.eventsPageSize);
+  pageState.events = pageInfo.current;
+  wrap.innerHTML = `<div class="table-scroll"><table>
+    <thead><tr><th>中文名</th><th>事件code</th><th>次数</th><th>说明</th></tr></thead>
+    <tbody>${pageInfo.rows.map(item => {
       const info = eventInfo(item.event);
       return `<tr>
-        <td>${info.known ? `<span class="pill">${info.name}</span>` : ""}<span class="code">${info.code}</span></td>
+        <td><strong>${safeText(info.name)}</strong></td>
+        <td class="mono">${safeText(info.code)}</td>
         <td>${item.count}</td>
+        <td>${safeText(info.desc || "未登记说明")}</td>
       </tr>`;
     }).join("")}</tbody>
-  </table>`;
+  </table></div>${renderPager("events", pageInfo)}`;
+  bindPager(wrap, "events", pageInfo, list, renderTopEvents);
 }
 
 function renderRecent(list){
   const wrap = document.getElementById("recent_table_wrap");
+  renderRecentDetail(null);
   if(!list || !list.length){
     wrap.innerHTML = '<div class="empty">暂无最近事件</div>';
     return;
   }
-  wrap.innerHTML = `<table class="recent">
-    <thead><tr><th>时间</th><th>事件</th><th>页面</th><th>关卡</th><th>详情</th></tr></thead>
-    <tbody>${list.slice(0, 30).map(ev => {
-      const props = ev.props && Object.keys(ev.props).length
-        ? JSON.stringify(ev.props)
-        : "-";
+  const pageInfo = paginate(list, pageState.recent, pageState.recentPageSize);
+  pageState.recent = pageInfo.current;
+  wrap.innerHTML = `<div class="table-scroll"><table class="recent">
+    <thead><tr><th>时间</th><th>事件</th><th>页面</th><th>关卡</th><th>摘要</th><th>操作</th></tr></thead>
+    <tbody>${pageInfo.rows.map((ev, idx) => {
+      const globalIdx = pageInfo.start + idx;
+      const summary = summarizeEventProps(ev.props);
       const info = eventInfo(ev.event);
       return `<tr>
         <td>${fmtTime(ev.ts)}</td>
         <td>${info.known ? `<span class="pill">${info.name}</span>` : ""}<span class="code">${info.code}</span></td>
-        <td>${ev.page || "-"}</td>
+        <td>${safeText(ev.page || "-")}</td>
         <td>${ev.levelId ?? "-"}</td>
-        <td>${props}</td>
+        <td class="summary-cell" title="${safeText(summary)}">${safeText(summary)}</td>
+        <td><button type="button" class="row-btn" data-recent-idx="${globalIdx}">查看</button></td>
       </tr>`;
     }).join("")}</tbody>
-  </table>`;
+  </table></div>${renderPager("recent", pageInfo)}`;
+
+  wrap.querySelectorAll("button[data-recent-idx]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const idx = Number(btn.dataset.recentIdx);
+      renderRecentDetail(list[idx] || null);
+    });
+  });
+  bindPager(wrap, "recent", pageInfo, list, renderRecent);
+}
+
+function summarizeEventProps(props){
+  if(!props || !Object.keys(props).length) return "-";
+  const copy = { ...props };
+  delete copy.__client;
+  const parts = [];
+  ["score","livesLeft","durationMs","cost","nextUrl","helpTitle","title","referrer"].forEach(k => {
+    if(copy[k] !== undefined && copy[k] !== null && copy[k] !== "") parts.push(`${k}:${copy[k]}`);
+    delete copy[k];
+  });
+  Object.keys(copy).slice(0, 4).forEach(k => {
+    const v = typeof copy[k] === "object" ? JSON.stringify(copy[k]) : copy[k];
+    parts.push(`${k}:${v}`);
+  });
+  return parts.length ? parts.join(" · ") : "仅客户端信息";
+}
+
+function renderRecentDetail(ev){
+  const box = document.getElementById("recent_detail");
+  if(!box) return;
+  if(!ev){
+    box.style.display = "none";
+    box.textContent = "";
+    return;
+  }
+  box.style.display = "block";
+  box.textContent = JSON.stringify(ev, null, 2);
 }
 
 const EVENT_DICT = {
   // 页面 & 基础行为
   "page_view": { name: "页面访问", desc: "打开页面时记录（包含 referrer/title）。" },
+  "home_start_click": { name: "首页开始", desc: "从首页点击开始冒险。" },
+  "home_preview_click": { name: "首页预览结局", desc: "从首页点击直接体验 CEO 就职。" },
   "home_click": { name: "返回首页", desc: "从关卡页点击回到首页。" },
   // 关卡核心流程
   "level_start": { name: "关卡开始", desc: "点击开始进入关卡。" },
   "pause_open": { name: "打开暂停", desc: "打开暂停菜单。" },
+  "help_open": { name: "打开帮助", desc: "点击当前位置帮助按钮（记录 helpTitle）。" },
   "level_retry": { name: "关卡重试", desc: "点击重来/再玩一次。" },
   "coin_continue": { name: "花币续命", desc: "用 MT币换 1 条命继续游戏（记录 cost/score）。" },
+  "player_death": { name: "玩家死亡", desc: "玩家单次死亡/受致命伤事件。" },
   "level_fail": { name: "关卡失败", desc: "生命用完/失败结算（包含本局时长/分数等）。" },
   "level_win": { name: "关卡通关", desc: "通关结算（包含本局时长/分数等）。" },
   "next_level_click": { name: "下一关点击", desc: "在通关弹窗点击下一关（记录 nextUrl）。" },
+  // 结局页
+  "epilogue_start": { name: "结局开始", desc: "CEO 就职结局动画开始（记录 name）。" },
+  "epilogue_complete": { name: "结局完成", desc: "CEO 就职结局动画播放完成。" },
+  "epilogue_skip": { name: "跳过结局", desc: "用户跳过 CEO 就职结局动画。" },
+  "epilogue_btn_work": { name: "结局继续工作", desc: "结局页点击继续打工/工作按钮。" },
+  "epilogue_btn_sleep": { name: "结局去睡觉", desc: "结局页点击睡觉按钮。" },
+  // 调试/连通性测试
+  "cors_test": { name: "CORS测试", desc: "接口跨域连通性测试事件。" },
+  "test_ping": { name: "测试Ping", desc: "手动或脚本写入的测试事件。" },
+  "manual_test": { name: "手动测试", desc: "手动写入的测试事件。" },
+  "live_test": { name: "线上测试", desc: "线上连通性测试事件。" },
+  "test_user_detail": { name: "用户详情测试", desc: "用户明细功能测试事件。" },
   // 可扩展：你后续新增事件可以继续补到这里
 };
 
@@ -261,28 +570,15 @@ function eventInfo(code){
   };
 }
 
-function renderEventDict(){
-  const wrap = document.getElementById("event_dict_wrap");
-  if(!wrap) return;
-  const rows = Object.entries(EVENT_DICT).map(([code, v]) => ({ code, ...v }));
-  wrap.innerHTML = `<table>
-    <thead><tr><th>中文名</th><th>事件code</th><th>说明</th></tr></thead>
-    <tbody>
-      ${rows.map(r => `<tr>
-        <td><strong>${safeText(r.name)}</strong></td>
-        <td class="mono">${safeText(r.code)}</td>
-        <td>${safeText(r.desc)}</td>
-      </tr>`).join("")}
-    </tbody>
-  </table>
-  <div class="sub" style="margin-top:10px">
-    只有在事件字典里登记过的事件才会显示中文名；未登记的事件会仅显示 code。
-  </div>`;
-}
-
 function safeText(s){
   if(s === null || s === undefined) return "";
-  return String(s);
+  return String(s).replace(/[&<>"']/g, ch => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  }[ch]));
 }
 
 function renderUserDetail(user){
@@ -318,7 +614,9 @@ function renderUsers(list){
     return;
   }
 
-  wrap.innerHTML = `<table class="users">
+  const pageInfo = paginate(list, pageState.users, pageState.usersPageSize);
+  pageState.users = pageInfo.current;
+  wrap.innerHTML = `<div class="table-scroll"><table class="users">
     <thead><tr>
       <th>访客ID</th>
       <th>会话</th>
@@ -331,7 +629,7 @@ function renderUsers(list){
       <th>操作</th>
     </tr></thead>
     <tbody>
-      ${list.slice(0, 200).map(u => {
+      ${pageInfo.rows.map(u => {
         const c = u.client || {};
         const lang = c.language || (Array.isArray(c.languages) ? c.languages[0] : null) || "-";
         const tz = c.timeZone || "-";
@@ -347,7 +645,7 @@ function renderUsers(list){
           <td>${fmtTime(u.lastSeen)}</td>
           <td>${safeText(u.lastPage || "-")}</td>
           <td>${info.known ? `<span class="pill">${info.name}</span>` : ""}<span class="code">${info.code}</span></td>
-          <td title="${safeText(ua)}">${clientSummary}</td>
+          <td title="${safeText(ua)}">${safeText(clientSummary)}</td>
           <td>
             <button type="button" class="row-btn" data-act="view">查看</button>
             <button type="button" class="row-btn" data-act="copy">复制</button>
@@ -355,7 +653,7 @@ function renderUsers(list){
         </tr>`;
       }).join("")}
     </tbody>
-  </table>`;
+  </table></div>${renderPager("users", pageInfo)}`;
 
   wrap.querySelectorAll('button[data-act="view"]').forEach(btn => {
     btn.addEventListener("click", () => {
@@ -394,34 +692,40 @@ function renderUsers(list){
       }
     });
   });
+  bindPager(wrap, "users", pageInfo, list, renderUsers);
 }
 
 async function loadStats(){
   const meta = document.getElementById("meta");
   try{
-    const res = await fetch(API);
+    syncSourceButtons();
+    const source = getSource();
+    const res = await fetch(apiUrl());
     const json = await res.json();
     if(!json.ok) throw new Error(json.error || "接口错误");
     const data = json.data;
-    meta.textContent = `更新于 ${fmtTime(data.generatedAt)}`;
+    meta.textContent = `${SOURCE_LABELS[source]} · 更新于 ${fmtTime(data.generatedAt)}`;
     renderSummary(data);
+    renderFunnel(data.levelFunnel, data.funnelSummary);
+    renderInsights(data);
     renderLevels(data.levels);
+    renderDimensions(data.dimensions);
     renderTopEvents(data.topEvents);
-    renderEventDict();
     renderUsers(data.users);
     renderRecent(data.recent);
   }catch(err){
-    meta.innerHTML = `<span class="err">无法加载统计数据。请先运行 <code>npm install && npm start</code>，再访问 <code>http://localhost:3000/src/stats.html</code><br>${err.message}</span>`;
-    ["summary_grid","levels_table_wrap","events_table_wrap","users_table_wrap","recent_table_wrap"].forEach(id => {
+    meta.innerHTML = `<span class="err">无法加载 ${safeText(SOURCE_LABELS[getSource()] || "统计")}。本地数据需运行 <code>npm install && npm start</code>；线上数据需 Render 服务可访问。<br>${safeText(err.message)}</span>`;
+    ["summary_grid","funnel_wrap","insights_wrap","levels_table_wrap","dimensions_wrap","events_table_wrap","users_table_wrap","recent_table_wrap"].forEach(id => {
       const el = document.getElementById(id);
       if(el) el.innerHTML = "";
     });
-    const dict = document.getElementById("event_dict_wrap");
-    if(dict) dict.innerHTML = "";
     renderUserDetail(null);
+    renderRecentDetail(null);
   }
 }
 
+document.getElementById("btn_source_online").addEventListener("click", () => setSource("online"));
+document.getElementById("btn_source_local").addEventListener("click", () => setSource("local"));
 document.getElementById("btn_refresh").addEventListener("click", loadStats);
 loadStats();
 </script>

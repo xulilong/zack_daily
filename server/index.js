@@ -16,6 +16,61 @@ const LEVEL_NAMES = {
   5: "CEO办公室"
 };
 
+function levelFromPage(page){
+  const m = String(page || "").match(/mt-level(\d+)-demo\.html/i);
+  return m ? Number(m[1]) : null;
+}
+
+function pctRatio(n, d){
+  return d ? Number((n / d).toFixed(3)) : 0;
+}
+
+function inc(map, key){
+  const k = key || "unknown";
+  map[k] = (map[k] || 0) + 1;
+}
+
+function topList(map, limit = 10){
+  return Object.entries(map)
+    .sort((a, b) => b[1] - a[1] || String(a[0]).localeCompare(String(b[0])))
+    .slice(0, limit)
+    .map(([name, count]) => ({ name, count }));
+}
+
+function clientFromEvent(ev){
+  return ev && ev.props && ev.props.__client ? ev.props.__client : null;
+}
+
+function deviceType(client){
+  const ua = String(client?.userAgent || "").toLowerCase();
+  const w = Number(client?.viewport?.w || client?.screen?.w || 0);
+  if(/mobile|iphone|android|openharmony|phone/.test(ua) || (w && w < 700)) return "mobile";
+  if(/ipad|tablet/.test(ua) || (w && w < 1100)) return "tablet";
+  return "desktop";
+}
+
+function browserName(client){
+  const ua = String(client?.userAgent || "");
+  if(/QQBrowser/i.test(ua)) return "QQBrowser";
+  if(/HuaweiBrowser/i.test(ua)) return "HuaweiBrowser";
+  if(/Edg\//i.test(ua)) return "Edge";
+  if(/Chrome\//i.test(ua)) return "Chrome";
+  if(/Safari\//i.test(ua) && /Version\//i.test(ua)) return "Safari";
+  if(/Firefox\//i.test(ua)) return "Firefox";
+  if(/Electron\//i.test(ua)) return "Electron";
+  return ua ? "Other" : "unknown";
+}
+
+function referrerHost(referrer){
+  if(!referrer) return "direct";
+  try{ return new URL(referrer).hostname || "direct"; }
+  catch(e){ return "unknown"; }
+}
+
+function avg(list){
+  return list.length ? Math.round(list.reduce((a, b) => a + b, 0) / list.length) : 0;
+}
+
 async function submitLeaderboardEntry(name, score, visitorId){
   name = String(name || "").trim().slice(0, 12);
   score = Math.max(0, parseInt(score, 10) || 0);
@@ -55,6 +110,7 @@ function aggregateStats(events){
   };
 
   const levels = {};
+  const levelActors = {};
   for(let id = 1; id <= 5; id++){
     levels[id] = {
       levelId: id,
@@ -64,19 +120,42 @@ function aggregateStats(events){
       fails: 0,
       retries: 0,
       coinContinues: 0,
-      deaths: 0
+      deaths: 0,
+      helpOpens: 0,
+      winDurations: [],
+      failDurations: []
+    };
+    levelActors[id] = {
+      reached: new Set(),
+      started: new Set(),
+      won: new Set(),
+      failed: new Set()
     };
   }
 
   const eventCounts = {};
   const pages = {};
+  const deviceCounts = {};
+  const browserCounts = {};
+  const referrerCounts = {};
+  const languageCounts = {};
+  const timeZoneCounts = {};
   const recent = events.slice(-100).reverse();
   const users = {};
 
   for(const ev of events){
+    const client = clientFromEvent(ev);
     if(ev.sessionId) totals.sessions.add(ev.sessionId);
     if(ev.visitorId) totals.visitors.add(ev.visitorId);
     if(ev.event === "page_view") totals.pageViews++;
+
+    if(client){
+      inc(deviceCounts, deviceType(client));
+      inc(browserCounts, browserName(client));
+      inc(languageCounts, client.language || (Array.isArray(client.languages) ? client.languages[0] : null));
+      inc(timeZoneCounts, client.timeZone);
+    }
+    if(ev.event === "page_view") inc(referrerCounts, referrerHost(ev.props?.referrer));
 
     eventCounts[ev.event] = (eventCounts[ev.event] || 0) + 1;
 
@@ -84,7 +163,10 @@ function aggregateStats(events){
     pages[page] = (pages[page] || 0) + 1;
 
     const levelId = ev.levelId || ev.props?.levelId;
-    const bucket = levelId && levels[levelId] ? levels[levelId] : null;
+    const pageLevelId = levelFromPage(ev.page);
+    const normalizedLevelId = levelId || pageLevelId;
+    const bucket = normalizedLevelId && levels[normalizedLevelId] ? levels[normalizedLevelId] : null;
+    const actorId = ev.visitorId || ev.sessionId || null;
 
     // 用户明细（按 visitorId 聚合）
     if(ev.visitorId){
@@ -123,14 +205,81 @@ function aggregateStats(events){
       if(ev.event === "level_retry") bucket.retries++;
       if(ev.event === "coin_continue") bucket.coinContinues++;
       if(ev.event === "player_death") bucket.deaths++;
+      if(ev.event === "help_open") bucket.helpOpens++;
+      if(ev.event === "level_win" && Number.isFinite(Number(ev.props?.durationMs))) bucket.winDurations.push(Number(ev.props.durationMs));
+      if(ev.event === "level_fail" && Number.isFinite(Number(ev.props?.durationMs))) bucket.failDurations.push(Number(ev.props.durationMs));
+
+      if(actorId){
+        const actorBucket = levelActors[bucket.levelId];
+        actorBucket.reached.add(actorId);
+        if(ev.event === "page_view") actorBucket.reached.add(actorId);
+        if(ev.event === "level_start") actorBucket.started.add(actorId);
+        if(ev.event === "level_win") actorBucket.won.add(actorId);
+        if(ev.event === "level_fail") actorBucket.failed.add(actorId);
+      }
     }
   }
 
   const levelList = Object.values(levels).map(item => ({
-    ...item,
-    winRate: item.starts ? Number((item.wins / item.starts).toFixed(3)) : 0,
-    failRate: item.starts ? Number((item.fails / item.starts).toFixed(3)) : 0
+    levelId: item.levelId,
+    name: item.name,
+    starts: item.starts,
+    wins: item.wins,
+    fails: item.fails,
+    retries: item.retries,
+    coinContinues: item.coinContinues,
+    deaths: item.deaths,
+    helpOpens: item.helpOpens,
+    avgWinDurationMs: avg(item.winDurations),
+    avgFailDurationMs: avg(item.failDurations),
+    winRate: pctRatio(item.wins, item.starts),
+    failRate: pctRatio(item.fails, item.starts)
   }));
+
+  const firstStarts = levelActors[1].started.size;
+  const firstReached = levelActors[1].reached.size;
+  const levelFunnel = levelList.map((lv, idx) => {
+    const actors = levelActors[lv.levelId];
+    const prev = idx > 0 ? levelActors[levelList[idx - 1].levelId] : null;
+    const reachedUsers = actors.reached.size;
+    const startedUsers = actors.started.size;
+    const wonUsers = actors.won.size;
+    return {
+      levelId: lv.levelId,
+      name: lv.name,
+      reachedUsers,
+      startedUsers,
+      wonUsers,
+      startRateFromReach: pctRatio(startedUsers, reachedUsers),
+      winRateFromStart: pctRatio(wonUsers, startedUsers),
+      retentionFromLevel1Start: pctRatio(startedUsers, firstStarts),
+      retentionFromLevel1Reach: pctRatio(reachedUsers, firstReached),
+      stepStartConversion: prev ? pctRatio(startedUsers, prev.started.size) : 1,
+      stepReachConversion: prev ? pctRatio(reachedUsers, prev.reached.size) : 1
+    };
+  });
+
+  const dropoffs = levelFunnel.slice(1).map((item, idx) => ({
+    fromLevelId: levelFunnel[idx].levelId,
+    toLevelId: item.levelId,
+    fromName: levelFunnel[idx].name,
+    toName: item.name,
+    fromStartedUsers: levelFunnel[idx].startedUsers,
+    toStartedUsers: item.startedUsers,
+    lostUsers: Math.max(0, levelFunnel[idx].startedUsers - item.startedUsers),
+    conversion: item.stepStartConversion
+  }));
+  const biggestDropoff = dropoffs.slice().sort((a, b) => b.lostUsers - a.lostUsers || a.conversion - b.conversion)[0] || null;
+  const level5 = levelFunnel[levelFunnel.length - 1] || null;
+  const funnelSummary = {
+    baseLevel1StartedUsers: firstStarts,
+    baseLevel1ReachedUsers: firstReached,
+    finalLevelStartedUsers: level5 ? level5.startedUsers : 0,
+    finalLevelWonUsers: level5 ? level5.wonUsers : 0,
+    startToLevel5StartRate: level5 ? pctRatio(level5.startedUsers, firstStarts) : 0,
+    startToLevel5WinRate: level5 ? pctRatio(level5.wonUsers, firstStarts) : 0,
+    biggestDropoff
+  };
 
   const topEvents = Object.entries(eventCounts)
     .sort((a, b) => b[1] - a[1])
@@ -158,6 +307,16 @@ function aggregateStats(events){
       pageViews: totals.pageViews
     },
     levels: levelList,
+    levelFunnel,
+    funnelSummary,
+    dimensions: {
+      devices: topList(deviceCounts),
+      browsers: topList(browserCounts),
+      referrers: topList(referrerCounts),
+      languages: topList(languageCounts),
+      timeZones: topList(timeZoneCounts),
+      pages: topList(pages, 12)
+    },
     topEvents,
     pages,
     recent,

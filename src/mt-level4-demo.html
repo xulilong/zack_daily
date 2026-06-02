@@ -625,6 +625,30 @@ function getZoneHint(x){
   return "CEO专座在前方…";
 }
 
+function getHelpHint(){
+  const x=player.x;
+  const st=ents.find(e=>e.type==="secretTrigger");
+  if(gameMode==="bonus") return "年终奖房间是限时奖励。先捡近处 MT币；不想冒险时一直往右走，可以提前从出口离开。";
+  if(x<820){
+    if(st&&!st.used&&x>560) return "墙边“人事部”是隐藏入口：在它旁边按住 ↓ 并停稳，就能进年终奖房间。";
+    return "排队闸机前别跳，走到闸机前停稳等它打开，再往右进入食堂。";
+  }
+  if(x<1880){
+    if(!isFoodServed()) return "站在取餐窗口前停稳，等餐放出来后再碰餐盘。没出餐时继续冲只会卡住。";
+    return "先拿餐盘。端盘后不能跑、不能跳上平台，走地面通道更稳。";
+  }
+  if(x<5200){
+    if(fx.tray<=0) return "目标是把餐盘正确回收，这边有一点难度：直接端着盘子是过不去的，需要先跳过去把插队的同事都消灭掉，再回头拿餐盘去回收。";
+    return "端盘时不要按 Shift，也别跳上平台。蒸汽前停一下，看准空档再走，快洒汤时先停步。";
+  }
+  if(x<5580) return "回收闸机要先放餐盘。慢下来到回收处停稳，餐盘交掉后闸机才会让你过。";
+  if(x<6800){
+    if(!trayDelivered) return "还没回收餐盘，先回到回收处交盘；带着盘子到 CEO 专座不会通关。";
+    return "餐盘已回收，继续往右去 CEO 专座，最后停稳落座。";
+  }
+  return "到 CEO 专座后别继续跑，在座位范围内停稳一小会儿就能完成。";
+}
+
 function updateHud(){
   if(gameMode==="bonus"){ updateBonusHud(); return; }
   const pi=document.getElementById("ui_power_icon");
@@ -1742,6 +1766,7 @@ MTUI.init({
   ensureAudio,
   toggleSound(){ soundOn=!soundOn; if(window.MTBGM) MTBGM.setSoundOn(soundOn); return soundOn; },
   getSessionStats(){ return { score, livesLeft: lives }; },
+  getHelpHint,
   isTerminal(){ return won||lives<=0; },
   onBeforeStart(){ resetGame(); },
   onRetry(){ resetGame(); },

@@ -350,6 +350,27 @@ function getZoneHint(x){
   return "前方积水，伞能防打滑。";
 }
 
+function getHelpHint(){
+  const x=player.x;
+  const box1=ents.find(e=>e.type==="box"&&e.initX===1320);
+  const box2=ents.find(e=>e.type==="box"&&e.initX===2340);
+  const umbrella=ents.find(e=>e.type==="umbrella");
+  if(x<900) return "往右走，路人可以从头顶踩掉。施工沟前要按住 Shift 助跑，再连续跳上小平台。";
+  if(x<1180) return "这段不是推箱，是跳台。按住 Shift 向右跑，落到每个白色平台上，不要站在施工尖刺里。";
+  if(x<1400) return "低门这里按住 ↓ 蹲下走过去。别快跑撞门，撞上会停不住。";
+  if(x<1780){
+    if(box1&&box1.x<1510) return "把写着“单车”的箱子一直往右推，推到沟里会变成桥，再从箱子上走过去。";
+    return "箱子已经靠近桥位了，从箱子或右侧小平台起跳过去。";
+  }
+  if(x<2320) return "等移动的巴士平台靠近，再跳上去；不要追着平台边缘硬跳。";
+  if(x<2840){
+    if(box2&&box2.x<2550) return "第二个大沟也要推“单车”箱子。先从左侧顶住箱子，慢慢往右推到沟里。";
+    return "第二个箱子已到位，站上箱子再跳到右岸。";
+  }
+  if(umbrella&&!umbrella.hidden) return "积水前先拿红伞。拿到伞后防滑时间有限，沿地面稳稳往右走。";
+  return "已经拿到伞了，别在积水里乱跳，保持向右通过公交站。";
+}
+
 function updateHud(){
   const pi=document.getElementById("ui_power_icon");
   MTUI.updateLives(lives, MAX_LIVES, lives<prevLives);
@@ -1057,6 +1078,7 @@ MTUI.init({
   ensureAudio,
   toggleSound(){ soundOn=!soundOn; if(window.MTBGM) MTBGM.setSoundOn(soundOn); return soundOn; },
   getSessionStats(){ return { score, livesLeft: lives }; },
+  getHelpHint,
   isTerminal(){ return won||lives<=0; },
   onBeforeStart(){ resetGame(); },
   onRetry(){ resetGame(); },

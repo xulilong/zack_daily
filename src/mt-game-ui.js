@@ -241,6 +241,65 @@ window.MTUI = (function(){
     });
   }
 
+  function getHelpPayload(){
+    const fallback = opts.defaultHelp || opts.defaultHint || "先观察当前位置附近的障碍，再试试跳跃、蹲下或推动道具。";
+    if(typeof opts.getHelpHint !== "function") return { body: fallback };
+    const payload = opts.getHelpHint({
+      levelId: opts.levelId || 0,
+      started,
+      paused,
+      stats: sessionStats()
+    });
+    if(!payload) return { body: fallback };
+    if(typeof payload === "string") return { body: payload };
+    return {
+      title: payload.title || "",
+      body: payload.body || payload.text || fallback
+    };
+  }
+
+  function showHelpGuide(){
+    const savedRestore = overlayRestore;
+    const shouldResumeOnClose = started && !paused && !(opts.isTerminal && opts.isTerminal());
+    if(shouldResumeOnClose){
+      paused = true;
+      syncPauseBtn();
+    }
+    const help = getHelpPayload();
+    track("help_open", { helpTitle: help.title || null });
+    showModal({
+      tag: "帮助",
+      title: help.title || "当前位置提示",
+      body: help.body,
+      actions: [{
+        id: "close",
+        label: "知道了",
+        kind: "btn-primary",
+        onClick(){
+          hideOverlay();
+          if(shouldResumeOnClose) resume();
+          else if(typeof savedRestore === "function") savedRestore();
+        }
+      }]
+    });
+  }
+
+  function ensureHelpBtn(){
+    let btn = $("btn_help");
+    if(btn) return btn;
+    const tools = document.querySelector(".head-tools");
+    if(!tools) return null;
+    btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "tb";
+    btn.id = "btn_help";
+    btn.setAttribute("aria-label", "当前位置帮助");
+    btn.textContent = "?";
+    tools.appendChild(btn);
+    btn.addEventListener("click", showHelpGuide);
+    return btn;
+  }
+
   function toggleBgm(){
     if(!window.MTBGM) return;
     if(typeof opts.ensureAudio === "function") opts.ensureAudio();
@@ -542,6 +601,7 @@ window.MTUI = (function(){
     if(muteBtn) muteBtn.addEventListener("click", toggleMute);
     if(bgmBtn) bgmBtn.addEventListener("click", toggleBgm);
     if(levelsBtn) levelsBtn.addEventListener("click", showLevelProgress);
+    ensureHelpBtn();
     ensureRankBtn();
     syncBgmBtn();
     document.addEventListener("visibilitychange", () => {
@@ -561,6 +621,7 @@ window.MTUI = (function(){
     syncKeys, updateProgress, updateHint, updateLives, toast,
     updateCollectibles, resetCollectibles,
     showGameOver, showWin, hideOverlay, ensureStart, retry, goHome, tryCoinContinue,
+    showHelpGuide,
     track
   };
 })();

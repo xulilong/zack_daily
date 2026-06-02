@@ -471,6 +471,29 @@ function getZoneHint(x){
   return "矮门蹲下钻过去，散会门在前。";
 }
 
+function getHelpHint(){
+  const x=player.x;
+  const mic=activeMic();
+  const chair=ents.find(e=>e.type==="box"&&e.label==="椅子");
+  if(x<700){
+    if(!canSpit) return "先拿润喉糖。跳到秘书旁边的高处吃到糖，之后 X / J / F 可以吐口水清掉插话同事。";
+    if(mic) return "站在话筒范围内别乱动，或按住 ↓ 蹲下，等话筒进度满了就会翻页接路。";
+    return "已经能吐口水了。遇到插话同事，面向他按 X，清掉后再去话筒前停稳。";
+  }
+  if(x<1220) return "第一页路没接上时，回到话筒前停稳讲完；甩锅飞来时跳开或避开它的落点。";
+  if(x<1680) return "会议桌会移动，等桌子靠近再跳。黄色便签是危险点，不要踩在上面。";
+  if(x<2280) return "@全体 弹窗出现时先等，它消失后再通过；硬冲会被挡住。";
+  if(x<2700) return "第二个话筒需要停稳，窄门位置按住 ↓ 讲完。咖啡会让你停不住，尽量绕开。";
+  if(x<3520) return "插话同事贴近话筒会打断你。先站远一点按 X 清掉同事，再回话筒前充满进度。";
+  if(x<4660){
+    if(chair&&chair.x<4040) return "把椅子从左往右推到大缝里，它会当桥。推好后再站上去过沟。";
+    return "椅子已接近桥位，别急着跳 400 宽的缝，从椅子上再起跳。";
+  }
+  if(x<5500) return "第三个话筒也要蹲下讲。按住 ↓ 别移动，等讲完后讲台会接出来。";
+  if(x<6480) return "激光笔扫过来时按住 ↓ 蹲下；经理扔文件夹时观察抛物线，别站在落点。";
+  return "最后是矮门，按住 ↓ 贴地钻过去，再往右到散会门。";
+}
+
 function micZone(ts){
   const pad=ts.crouchOnly?68:52;
   return {x:ts.x-pad,y:GROUND-(ts.crouchOnly?86:74),w:ts.w+pad*2,h:ts.crouchOnly?98:84};
@@ -1792,6 +1815,7 @@ MTUI.init({
   ensureAudio,
   toggleSound(){ soundOn=!soundOn; if(window.MTBGM) MTBGM.setSoundOn(soundOn); return soundOn; },
   getSessionStats(){ return { score, livesLeft: lives }; },
+  getHelpHint,
   isTerminal(){ return won||lives<=0; },
   onBeforeStart(){ resetGame(); },
   onRetry(){ resetGame(); },

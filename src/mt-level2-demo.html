@@ -381,6 +381,27 @@ function getZoneHint(x){
   return "保洁刚拖过地，捡拖鞋。";
 }
 
+function getHelpHint(){
+  const x=player.x;
+  const badge=ents.find(e=>e.type==="badge");
+  const box=ents.find(e=>e.type==="box");
+  const umbrella=ents.find(e=>e.type==="umbrella");
+  if(x<720) return "闸机不用硬跳。走到闸机前停稳等一下；如果卡在横杆下，按住 ↓ 蹲下通过。";
+  if(x<1590) return "地面断开时走上面的工位桌面。按住 Shift 助跑，逐个平台跳，不要贪金币掉回地面。";
+  if(x<2110) return "打印机烟雾会扣命，等烟小一点再过；如果旁边有咖啡，先拿咖啡加速穿过。";
+  if(x<3220){
+    if(badge&&!badge.hidden&&!hasBadge) return "先拿工牌。茶水间香蕉皮会打滑，看到黄色小皮就提前跳过去。";
+    return "已经拿到工牌了，慢一点处理香蕉皮和路人，别在窄平台上快跑。";
+  }
+  if(x<5070){
+    if(box&&box.x<4300) return "快递箱要推到沟/桥位。站在箱子左边持续往右推，推好后再过第二道闸机。";
+    return "箱子差不多到位了，先过桥，再在闸机前停稳等它打开。";
+  }
+  if(x<5784) return "电梯门是节奏机关。站在门外等它打开，再一次走进去；关门时不要硬闯。";
+  if(umbrella&&!umbrella.hidden) return "拖过的地会滑，先捡拖鞋/防滑道具，再稳着往终点走。";
+  return "已经有防滑效果了，少跳，保持向右通过湿滑地面。";
+}
+
 function updateHud(){
   const pi=document.getElementById("ui_power_icon");
   MTUI.updateLives(lives, MAX_LIVES, lives<prevLives);
@@ -1290,6 +1311,7 @@ MTUI.init({
   ensureAudio,
   toggleSound(){ soundOn=!soundOn; if(window.MTBGM) MTBGM.setSoundOn(soundOn); return soundOn; },
   getSessionStats(){ return { score, livesLeft: lives }; },
+  getHelpHint,
   isTerminal(){ return won||lives<=0; },
   onBeforeStart(){ resetGame(); },
   onRetry(){ resetGame(); },

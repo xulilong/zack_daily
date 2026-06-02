@@ -19,6 +19,7 @@
 .tb:active{transform:translateY(2px);box-shadow:0 0 0 var(--ink);}
 .tb.active{background:var(--accent);color:#fff;}
 .tb.muted{opacity:.55;}
+#btn_help{font-weight:900;font-size:17px;}
 .lives-stat .hearts{letter-spacing:.06em;color:#c0392b;font-size:13px;}
 .stat.lives-stat.lost .hearts{animation:heartPop .35s ease;}
 @keyframes heartPop{50%{transform:scale(1.2);opacity:.5;}}

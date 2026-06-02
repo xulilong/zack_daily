@@ -377,6 +377,41 @@ function getZoneHint(x){
   return "在椅子上停稳落座。"
 }
 
+function getHelpHint(){
+  const x=player.x;
+  const ceoChair=ents.find(e=>e.type==="box"&&e.label==="CEO椅");
+  const archiveBox=ents.find(e=>e.type==="box"&&e.label==="档案");
+  if(x<640){
+    if(!hasAccessCard) return "先找行政拿门禁卡。站在行政旁边停稳，等进度完成；拿到卡后第一道闸机会自动打开。";
+    return "门禁卡已经拿到，直接往右过闸机；如果卡在杆下，停一下再走。";
+  }
+  if(x<1500){
+    if(ceoChair&&ceoChair.x<980) return "CEO 椅很重，要从左侧一直往右推到桥台/沟边。推到位后它会帮你越过缺口。";
+    return "CEO 椅已经靠近桥位，站到椅子上或桥台边缘再跳过去。";
+  }
+  if(x<1880){
+    if(!hasAppointment) return "任命书在打印机旁。站在打印机前停稳等它打印出来，再去低门。";
+    return "任命书已拿到，低门位置按住 ↓ 蹲下走过去。";
+  }
+  if(x<3100){
+    if(!hasCeoBadge) return "找秘书领 CEO 工牌。靠近秘书后按住 ↓ 蹲下停稳，等她把工牌给你。";
+    return "CEO 工牌到手了，继续往右；后面的工牌闸机需要它。";
+  }
+  if(x<4580){
+    if(archiveBox&&archiveBox.x<3520) return "把档案箱从左往右推到缺口处搭桥。推好以后再去第二道闸机前停稳。";
+    return "档案箱已接近桥位，先过桥，再在第二道闸机前停稳等开。";
+  }
+  if(x<5200) return "工牌门不是跳过去的，按住 ↓ 蹲下通过；如果还过不去，确认 CEO 工牌已经拿到。";
+  if(x<5560) return "董事会前别带着文件夹硬跑，门槛处慢下来，看清地形再过。";
+  if(x<6280) return "经理查岗时要蹲进工位躲。看到高峰提示或经理靠近，先找最近工位按住 ↓。";
+  if(x<6680){
+    if(!briefDelivered&&fx.brief<=0) return "先找助理领决策文件夹。拿到后别跑别摔，直接送到落座区交付。";
+    if(!briefDelivered) return "文件夹在手时别按 Shift，摔倒会掉。稳着走到落座区停稳交付。";
+    return "文件已经交付，往右到 CEO 椅子处停稳落座。";
+  }
+  return "站在 CEO 椅子范围内松开方向键，停稳一会儿即可完成最后一步。";
+}
+
 function gateAllowed(g){
   if(g.need==="appointment") return hasAppointment;
   if(g.need==="badge") return hasCeoBadge;
@@ -1543,6 +1578,7 @@ MTUI.init({
   ensureAudio,
   toggleSound(){ soundOn=!soundOn; if(window.MTBGM) MTBGM.setSoundOn(soundOn); return soundOn; },
   getSessionStats(){ return { score, livesLeft: lives }; },
+  getHelpHint,
   isTerminal(){ return won||lives<=0; },
   onBeforeStart(){ resetGame(); },
   onRetry(){ resetGame(); },

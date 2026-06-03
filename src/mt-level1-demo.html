@@ -449,7 +449,7 @@ function startDream(){
   player.vy=-120;
   sfx.pickup();
   MTUI.toast("做梦模式：飞起来了！↑↓反向", 1800);
-  if(window.MTUI) MTUI.track("dream_mode_start", { dream:"fly_reverse_y" });
+  trackDreamEvent("dream_mode_start");
   updateHud();
 }
 function updateDream(dt){
@@ -459,10 +459,25 @@ function updateDream(dt){
       dream.cooldown=DREAM_COOLDOWN;
       player.vy=Math.min(player.vy, 120);
       MTUI.toast("梦醒了，慢慢落地", 1200);
+      trackDreamEvent("dream_mode_end");
     }
   } else if(dream.cooldown>0){
+    const before=dream.cooldown;
     dream.cooldown=Math.max(0,dream.cooldown-dt);
+    if(before>0&&dream.cooldown<=0) trackDreamEvent("dream_mode_cooldown_ready");
   }
+}
+
+function trackDreamEvent(event){
+  if(!window.MTUI) return;
+  MTUI.track(event, {
+    dream:"fly_reverse_y",
+    level:1,
+    playerX:Math.round(player.x),
+    progress:Math.max(0,Math.min(1,player.x/Math.max(1,WORLD_W-200))),
+    duration:DREAM_DURATION,
+    cooldown:DREAM_COOLDOWN
+  });
 }
 
 function doJump(){

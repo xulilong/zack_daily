@@ -736,13 +736,33 @@ function startDream(){
   fx.smoke=0;
   MTUI.toast("做梦模式：全员让路");
   sfx.pickup();
+  trackDreamEvent("dream_mode_start");
   updateHud();
 }
 function updateDream(dt){
   if(dream.active>0){
     dream.active=Math.max(0,dream.active-dt);
-    if(dream.active<=0){ dream.cooldown=DREAM_COOLDOWN; MTUI.toast("梦醒了，食堂恢复拥挤", 1200); }
-  } else if(dream.cooldown>0) dream.cooldown=Math.max(0,dream.cooldown-dt);
+    if(dream.active<=0){ dream.cooldown=DREAM_COOLDOWN; MTUI.toast("梦醒了，食堂恢复拥挤", 1200); trackDreamEvent("dream_mode_end"); }
+  } else if(dream.cooldown>0){
+    const before=dream.cooldown;
+    dream.cooldown=Math.max(0,dream.cooldown-dt);
+    if(before>0&&dream.cooldown<=0) trackDreamEvent("dream_mode_cooldown_ready");
+  }
+}
+
+function trackDreamEvent(event){
+  if(!window.MTUI) return;
+  MTUI.track(event, {
+    dream:"cafeteria_crowd_yield",
+    level:4,
+    playerX:Math.round(player.x),
+    progress:Math.max(0,Math.min(1,player.x/Math.max(1,WORLD_W-200))),
+    duration:DREAM_DURATION,
+    cooldown:DREAM_COOLDOWN,
+    hasTray:fx.tray>0,
+    trayDelivered,
+    foodServed:isFoodServed()
+  });
 }
 
 function summonDreamTray(){

@@ -192,6 +192,11 @@
     <div id="levels_table_wrap"></div>
   </div>
 
+  <div class="card" id="panel_dream">
+    <h2>梦境能力统计</h2>
+    <div id="dream_stats_wrap"></div>
+  </div>
+
   <div class="card" id="panel_dimensions">
     <h2>访问维度</h2>
     <div id="dimensions_wrap"></div>
@@ -415,6 +420,65 @@ function renderLevels(levels){
   </table>`;
 }
 
+function renderDreamStats(stats){
+  const wrap = document.getElementById("dream_stats_wrap");
+  if(!wrap) return;
+  if(stats === undefined || stats === null){
+    wrap.innerHTML = '<div class="empty">当前数据源没有返回梦境统计字段。请部署新版后端后查看完整数据。</div>';
+    return;
+  }
+  const byLevel = stats.byLevel || [];
+  const byDream = stats.byDream || [];
+  if(!stats.totalStarts && !byLevel.some(x => x.starts)){
+    wrap.innerHTML = '<div class="empty">暂无梦境使用数据</div>';
+    return;
+  }
+  const summary = [
+    ["梦境开启次数", stats.totalStarts || 0],
+    ["使用梦境用户", stats.users || 0],
+    ["梦境结束次数", stats.totalEnds || 0],
+    ["冷却完成次数", stats.totalCooldownReady || 0],
+    ["完整使用率", pct(stats.endRateFromStarts || 0)],
+    ["冷却完成率", pct(stats.cooldownReadyRateFromStarts || 0)]
+  ].map(([lbl, val]) =>
+    `<div class="stat"><div class="lbl">${lbl}</div><div class="val">${val}</div></div>`
+  ).join("");
+  const levelRows = byLevel.map(item => `<tr>
+    <td><strong>${item.levelId}</strong> ${safeText(item.name)}</td>
+    <td>${item.starts || 0}</td>
+    <td>${item.users || 0}</td>
+    <td>${pct(item.usageRateFromStartedUsers || 0)}</td>
+    <td>${item.ends || 0}</td>
+    <td>${pct(item.endRateFromStarts || 0)}</td>
+    <td>${item.cooldownReady || 0}</td>
+    <td>${pct(item.cooldownReadyRateFromStarts || 0)}</td>
+    <td>${item.topDream ? `${dreamName(item.topDream.dream)} <span class="code">${safeText(item.topDream.dream)}</span>` : "-"}</td>
+  </tr>`).join("");
+  const dreamRows = byDream.map(item => `<tr>
+    <td><strong>${dreamName(item.dream)}</strong><span class="code">${safeText(item.dream)}</span></td>
+    <td>${item.starts || 0}</td>
+    <td>${item.users || 0}</td>
+    <td>${item.ends || 0}</td>
+    <td>${pct(item.endRateFromStarts || 0)}</td>
+    <td>${item.cooldownReady || 0}</td>
+    <td>${pct(item.cooldownReadyRateFromStarts || 0)}</td>
+  </tr>`).join("");
+  wrap.innerHTML = `
+    <div class="grid">${summary}</div>
+    <h3 style="font-size:13px;margin:14px 0 8px">按关卡</h3>
+    <div class="table-scroll"><table>
+      <thead><tr><th>关卡</th><th>开启</th><th>用户</th><th>使用率</th><th>结束</th><th>完整率</th><th>冷却完成</th><th>冷却率</th><th>主要梦</th></tr></thead>
+      <tbody>${levelRows}</tbody>
+    </table></div>
+    <h3 style="font-size:13px;margin:14px 0 8px">按梦类型</h3>
+    <div class="table-scroll"><table>
+      <thead><tr><th>梦类型</th><th>开启</th><th>用户</th><th>结束</th><th>完整率</th><th>冷却完成</th><th>冷却率</th></tr></thead>
+      <tbody>${dreamRows}</tbody>
+    </table></div>
+    <div class="sub" style="margin-top:10px">使用率口径：使用梦境用户 / 该关开始用户；完整率：dream_mode_end / dream_mode_start。</div>
+  `;
+}
+
 function renderDimensions(dimensions){
   const wrap = document.getElementById("dimensions_wrap");
   if(!wrap) return;
@@ -544,6 +608,9 @@ const EVENT_DICT = {
   "level_fail": { name: "关卡失败", desc: "生命用完/失败结算（包含本局时长/分数等）。" },
   "level_win": { name: "关卡通关", desc: "通关结算（包含本局时长/分数等）。" },
   "next_level_click": { name: "下一关点击", desc: "在通关弹窗点击下一关（记录 nextUrl）。" },
+  "dream_mode_start": { name: "开启做梦", desc: "用户开启当前关卡的梦境能力（记录 dream/level/playerX/progress）。" },
+  "dream_mode_end": { name: "梦境结束", desc: "梦境持续时间自然结束，进入冷却。" },
+  "dream_mode_cooldown_ready": { name: "梦境冷却完成", desc: "梦境冷却结束，可以再次开启。" },
   // 结局页
   "epilogue_start": { name: "结局开始", desc: "CEO 就职结局动画开始（记录 name）。" },
   "epilogue_complete": { name: "结局完成", desc: "CEO 就职结局动画播放完成。" },
@@ -558,6 +625,17 @@ const EVENT_DICT = {
   "test_user_detail": { name: "用户详情测试", desc: "用户明细功能测试事件。" },
   // 可扩展：你后续新增事件可以继续补到这里
 };
+
+function dreamName(code){
+  const map = {
+    fly_reverse_y: "飞行梦",
+    office_invincible: "无敌打卡人",
+    meeting_freeze: "静音定格",
+    cafeteria_crowd_yield: "开路梦",
+    boss_aura: "老板光环"
+  };
+  return safeText(map[code] || code || "-");
+}
 
 function eventInfo(code){
   const c = safeText(code || "-");
@@ -709,13 +787,14 @@ async function loadStats(){
     renderFunnel(data.levelFunnel, data.funnelSummary);
     renderInsights(data);
     renderLevels(data.levels);
+    renderDreamStats(data.dreamStats);
     renderDimensions(data.dimensions);
     renderTopEvents(data.topEvents);
     renderUsers(data.users);
     renderRecent(data.recent);
   }catch(err){
     meta.innerHTML = `<span class="err">无法加载 ${safeText(SOURCE_LABELS[getSource()] || "统计")}。本地数据需运行 <code>npm install && npm start</code>；线上数据需 Render 服务可访问。<br>${safeText(err.message)}</span>`;
-    ["summary_grid","funnel_wrap","insights_wrap","levels_table_wrap","dimensions_wrap","events_table_wrap","users_table_wrap","recent_table_wrap"].forEach(id => {
+    ["summary_grid","funnel_wrap","insights_wrap","levels_table_wrap","dream_stats_wrap","dimensions_wrap","events_table_wrap","users_table_wrap","recent_table_wrap"].forEach(id => {
       const el = document.getElementById(id);
       if(el) el.innerHTML = "";
     });

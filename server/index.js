@@ -142,6 +142,25 @@ function aggregateStats(events){
   const timeZoneCounts = {};
   const recent = events.slice(-100).reverse();
   const users = {};
+  const dreamStats = {
+    totalStarts: 0,
+    totalEnds: 0,
+    totalCooldownReady: 0,
+    users: new Set(),
+    byLevel: {},
+    byDream: {}
+  };
+  for(let id = 1; id <= 5; id++){
+    dreamStats.byLevel[id] = {
+      levelId: id,
+      name: LEVEL_NAMES[id] || `关卡${id}`,
+      starts: 0,
+      ends: 0,
+      cooldownReady: 0,
+      users: new Set(),
+      dreams: {}
+    };
+  }
 
   for(const ev of events){
     const client = clientFromEvent(ev);
@@ -167,6 +186,39 @@ function aggregateStats(events){
     const normalizedLevelId = levelId || pageLevelId;
     const bucket = normalizedLevelId && levels[normalizedLevelId] ? levels[normalizedLevelId] : null;
     const actorId = ev.visitorId || ev.sessionId || null;
+
+    if(ev.event === "dream_mode_start" || ev.event === "dream_mode_end" || ev.event === "dream_mode_cooldown_ready"){
+      const dream = ev.props?.dream || "unknown";
+      const targetLevel = normalizedLevelId && dreamStats.byLevel[normalizedLevelId] ? dreamStats.byLevel[normalizedLevelId] : null;
+      const dreamBucket = dreamStats.byDream[dream] || (dreamStats.byDream[dream] = {
+        dream,
+        starts: 0,
+        ends: 0,
+        cooldownReady: 0,
+        users: new Set()
+      });
+      if(actorId){
+        dreamStats.users.add(actorId);
+        dreamBucket.users.add(actorId);
+        if(targetLevel) targetLevel.users.add(actorId);
+      }
+      if(ev.event === "dream_mode_start"){
+        dreamStats.totalStarts++;
+        dreamBucket.starts++;
+        if(targetLevel){
+          targetLevel.starts++;
+          targetLevel.dreams[dream] = (targetLevel.dreams[dream] || 0) + 1;
+        }
+      } else if(ev.event === "dream_mode_end"){
+        dreamStats.totalEnds++;
+        dreamBucket.ends++;
+        if(targetLevel) targetLevel.ends++;
+      } else if(ev.event === "dream_mode_cooldown_ready"){
+        dreamStats.totalCooldownReady++;
+        dreamBucket.cooldownReady++;
+        if(targetLevel) targetLevel.cooldownReady++;
+      }
+    }
 
     // 用户明细（按 visitorId 聚合）
     if(ev.visitorId){
@@ -235,6 +287,34 @@ function aggregateStats(events){
     winRate: pctRatio(item.wins, item.starts),
     failRate: pctRatio(item.fails, item.starts)
   }));
+
+  const dreamLevelList = Object.values(dreamStats.byLevel).map(item => {
+    const startedUsers = levelActors[item.levelId]?.started.size || 0;
+    const topDream = Object.entries(item.dreams).sort((a,b) => b[1] - a[1])[0] || null;
+    return {
+      levelId: item.levelId,
+      name: item.name,
+      starts: item.starts,
+      ends: item.ends,
+      cooldownReady: item.cooldownReady,
+      users: item.users.size,
+      usageRateFromStartedUsers: pctRatio(item.users.size, startedUsers),
+      endRateFromStarts: pctRatio(item.ends, item.starts),
+      cooldownReadyRateFromStarts: pctRatio(item.cooldownReady, item.starts),
+      topDream: topDream ? { dream: topDream[0], count: topDream[1] } : null
+    };
+  });
+  const dreamTypeList = Object.values(dreamStats.byDream)
+    .sort((a,b) => b.starts - a.starts)
+    .map(item => ({
+      dream: item.dream,
+      starts: item.starts,
+      ends: item.ends,
+      cooldownReady: item.cooldownReady,
+      users: item.users.size,
+      endRateFromStarts: pctRatio(item.ends, item.starts),
+      cooldownReadyRateFromStarts: pctRatio(item.cooldownReady, item.starts)
+    }));
 
   const firstStarts = levelActors[1].started.size;
   const firstReached = levelActors[1].reached.size;
@@ -307,6 +387,16 @@ function aggregateStats(events){
       pageViews: totals.pageViews
     },
     levels: levelList,
+    dreamStats: {
+      totalStarts: dreamStats.totalStarts,
+      totalEnds: dreamStats.totalEnds,
+      totalCooldownReady: dreamStats.totalCooldownReady,
+      users: dreamStats.users.size,
+      endRateFromStarts: pctRatio(dreamStats.totalEnds, dreamStats.totalStarts),
+      cooldownReadyRateFromStarts: pctRatio(dreamStats.totalCooldownReady, dreamStats.totalStarts),
+      byLevel: dreamLevelList,
+      byDream: dreamTypeList
+    },
     levelFunnel,
     funnelSummary,
     dimensions: {

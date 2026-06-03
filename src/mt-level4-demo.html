@@ -366,6 +366,9 @@ function saveCheckpoint(){
 }
 
 function respawnPlayer(){
+  const hadTray=fx.tray>0&&!trayDelivered;
+  const tray=ents.find(e=>e.type==="tray");
+  const trayAlreadyDropped=!!(tray&&!tray.hidden&&!trayDelivered);
   const spot=findSafeSpawn(player.x);
   player.x=spot.x;
   player.y=spot.y;
@@ -375,7 +378,11 @@ function respawnPlayer(){
   player.crouch=false;
   fx.crash=0; fx.slip=0; fx.smoke=0; fx.tray=0;
   dream={active:0,cooldown:0};
-  if(!trayDelivered){ trayStumbles=0; releaseTrayPickup(false); }
+  if(!trayDelivered){
+    trayStumbles=0;
+    if(hadTray) releaseTrayPickup(true);
+    else if(!trayAlreadyDropped) releaseTrayPickup(false);
+  }
   invulnT=1.6;
   dead=false;
   updateHud();
@@ -843,6 +850,11 @@ function spawnDust(x,y,n){ for(let i=0;i<n;i++) particles.push({x,y:y-2,vx:(Math
 
 function die(){
   if(dead) return;
+  if(fx.tray>0&&!trayDelivered){
+    fx.tray=0;
+    releaseTrayPickup(true);
+    updateHud();
+  }
   lives--; sfx.die(); shakeT=0.35;
   if(lives<=0){
     dead=true;

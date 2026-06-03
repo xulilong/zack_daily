@@ -43,10 +43,12 @@ window.MTUI = (function(){
     const modal = $("modal");
     if(!modal) return;
     const tag = cfg.tag ? `<div class="modal-tag">${cfg.tag}</div>` : "";
+    const image = cfg.image ? `<img class="modal-hero" src="${cfg.image}" alt="${cfg.imageAlt || ""}" loading="eager">` : "";
     const actions = (cfg.actions || []).map(a =>
       `<button type="button" class="btn ${a.kind || "btn-primary"}" data-act="${a.id}">${a.label}</button>`
     ).join("");
-    modal.innerHTML = `${tag}<h2>${cfg.title}</h2><div class="modal-body">${cfg.body || ""}</div><div class="modal-actions">${actions}</div>`;
+    modal.classList.toggle("has-hero", !!cfg.image);
+    modal.innerHTML = `${tag}${image}<h2>${cfg.title}</h2><div class="modal-body">${cfg.body || ""}</div><div class="modal-actions">${actions}</div>`;
     (cfg.actions || []).forEach(a => {
       const btn = modal.querySelector(`[data-act="${a.id}"]`);
       if(btn) btn.addEventListener("click", a.onClick);
@@ -61,6 +63,8 @@ window.MTUI = (function(){
     overlayRestore = showStart;
     showModal({
       tag: opts.levelTag || "关卡",
+      image: opts.startImage || "",
+      imageAlt: opts.startImageAlt || opts.startTitle || "关卡插画",
       title: opts.startTitle || "准备好了吗？",
       body: opts.startBody || "点击开始进入冒险。",
       actions: [{
@@ -612,7 +616,8 @@ window.MTUI = (function(){
     });
     if(typeof opts.onInit === "function") opts.onInit();
     setupCollectibles(opts.collectibles);
-    showStart();
+    if(new URLSearchParams(location.search).get("autostart") === "1") ensureStart();
+    else showStart();
   }
 
   return {

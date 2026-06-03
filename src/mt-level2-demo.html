@@ -240,7 +240,7 @@ const ents=[
 ];
 
 const bgSlots=[
-  {id:"bg_2_1_sky", x:0, y:0, w:WORLD_W, h:180},
+  {id:"bg_2_1_sky", src:"generated/level2-sky-panorama-borderless", x:0, y:0, w:WORLD_W, h:180},
 ];
 
 const signSlots=[
@@ -831,6 +831,7 @@ function fillStroke(){ ctx.fill(); ctx.stroke(); }
 function drawCoffee(e){
   const cx=e.x+e.w/2, bob=Math.sin(T*5)*2.5;
   const y=e.y+bob;
+  if(drawSpriteFit(ctx, propSprites.coffee, cx, y+25, e.w-14, e.h-12)) return;
 
   // 文案「咖啡」
   ctx.fillStyle="#fff9f0"; ctx.strokeStyle=INK; ctx.lineWidth=2.5;
@@ -854,6 +855,7 @@ function drawCoffee(e){
 
 function drawBanana(e){
   const cx=e.x+e.w/2, cy=e.y+e.h/2;
+  if(drawSpriteFit(ctx, propSprites.banana, cx, cy-3, e.w-4, e.h+8)) return;
   ctx.fillStyle="#ffe566"; ctx.strokeStyle=INK; ctx.lineWidth=2;
   ctx.beginPath();
   ctx.moveTo(cx-14,cy+2); ctx.quadraticCurveTo(cx,cy-8,cx+14,cy+2);
@@ -864,6 +866,7 @@ function drawBanana(e){
 
 function drawPuddle(e){
   const cx=e.x+e.w/2, cy=e.y+e.h/2+2, rx=e.w/2, ry=5+Math.sin(T*4+cx)*0.8;
+  if(drawSpriteFit(ctx, propSprites.puddle, cx, cy-2, e.w+18, e.h+24, 0.9)) return;
   ctx.fillStyle="rgba(100,165,210,.35)"; ctx.strokeStyle="rgba(42,42,42,.25)"; ctx.lineWidth=1.5;
   ctx.beginPath(); ctx.ellipse(cx,cy,rx,ry,0,0,7); ctx.fill(); ctx.stroke();
   ctx.strokeStyle="rgba(255,255,255,.5)"; ctx.lineWidth=1;
@@ -872,6 +875,7 @@ function drawPuddle(e){
 
 function drawBadge(e){
   const cx=e.x+e.w/2, bob=Math.sin(T*4)*2, y=e.y+bob;
+  if(drawSpriteFit(ctx, propSprites.badge, cx, y+22, e.w+4, e.h+8)) return;
   const img=bgImages.prop_badge;
   // Draw the sprite (if present), but ALWAYS overlay a clear "badge" silhouette.
   if(img){
@@ -904,6 +908,10 @@ function drawBadge(e){
 function drawTurnstile(e){
   const cx=e.x+e.w/2, open=e.open||hasBadge;
   const pct=open?1:Math.min(1,e.charge||0);
+  if(propSprites.turnstile){
+    drawSpriteFit(ctx, propSprites.turnstile, cx, e.y+e.h/2, e.w+8, e.h+10);
+    return;
+  }
   ctx.fillStyle="#d0cdc6"; ctx.strokeStyle=INK; ctx.lineWidth=2.5;
   rrect(e.x,e.y+8,e.w,e.h-8,3); fillStroke();
   ctx.fillStyle=open?"#7ec87a":"#c9956a";
@@ -922,6 +930,7 @@ function drawTurnstile(e){
 
 function drawSlippers(e){
   const cx=e.x+e.w/2, bob=Math.sin(T*4)*2, y=e.y+bob;
+  if(drawSpriteFit(ctx, propSprites.wetSign, cx, y+28, e.w+26, e.h+12)) return;
   ctx.fillStyle="#7aabcc"; ctx.strokeStyle=INK; ctx.lineWidth=2;
   ctx.beginPath(); ctx.ellipse(cx-8,y+36,10,5,0,0,7); ctx.fill(); ctx.stroke();
   ctx.beginPath(); ctx.ellipse(cx+8,y+36,10,5,0,0,7); ctx.fill(); ctx.stroke();
@@ -932,6 +941,7 @@ function drawSlippers(e){
 }
 function drawUmbrella(e){
   const cx=e.x+e.w/2, bob=Math.sin(T*4)*2, y=e.y+bob;
+  if(drawSpriteFit(ctx, propSprites.umbrella, cx, y+25, e.w+18, e.h+14)) return;
   ctx.strokeStyle=INK; ctx.lineWidth=2.5; ctx.lineCap="round";
   rline(cx,y+38,cx,y+52);
   ctx.fillStyle="#e85d5d"; ctx.strokeStyle=INK; ctx.lineWidth=2;
@@ -942,6 +952,7 @@ function drawUmbrella(e){
 }
 
 function drawPrinter(e){
+  if(drawSpriteFit(ctx, propSprites.printer, e.x+e.w/2, e.y+e.h/2, e.w+10, e.h+8)) return;
   ctx.fillStyle="#fff"; ctx.strokeStyle=INK; ctx.lineWidth=2.5;
   rrect(e.x,e.y,e.w,e.h,5); fillStroke();
   ctx.fillStyle=INK; ctx.fillRect(e.x+10,e.y+12,e.w-20,8);
@@ -971,8 +982,7 @@ function drawDoor(e){
     rline(e.x+e.w/2,e.y+6,e.x+e.w/2,e.y+e.h-6);
     ctx.beginPath(); ctx.arc(e.x+e.w/2,e.y+e.h/2,4,0,7); ctx.fillStyle=INK; ctx.fill();
   }
-  ctx.fillStyle=open?"#3a7040":"#555"; ctx.font="700 9px PingFang SC,sans-serif"; ctx.textAlign="center";
-  ctx.fillText(open?"开":"关",e.x+e.w/2,e.y+14); ctx.textAlign="left";
+  ctx.textAlign="left";
 }
 
 function drawHazard(e){
@@ -1047,18 +1057,13 @@ function drawBackground(){
     }
   }
 
-  ctx.fillStyle=SIDE; ctx.fillRect(0,GROUND,WORLD_W,100);
+  drawSceneDepth(ctx,WORLD_W,GROUND,{wall:"#e9e4d9",wall2:"#dcd2c2",floor:SIDE});
   ctx.fillStyle=SIDE2; ctx.fillRect(0,GROUND,WORLD_W,3);
   ctx.strokeStyle="rgba(37,37,37,.07)"; ctx.lineWidth=1;
   for(let x=0;x<WORLD_W;x+=48){
     rline(x,GROUND+18,x+24,GROUND+18);
     rline(x+24,GROUND+38,x+48,GROUND+38);
   }
-
-  // 隔断墙（工位区）
-  ctx.strokeStyle=INK; ctx.lineWidth=2; ctx.globalAlpha=0.12;
-  for(let x=900;x<3100;x+=220) rline(x,GROUND-120,x,GROUND-20);
-  ctx.globalAlpha=1;
 
   for(const s of signSlots) drawSign(s);
 
@@ -1103,23 +1108,23 @@ function drawWorld(){
   for(const e of ents){
     if(e.hidden) continue;
     if(e.type==="platform"||e.type==="mover"){
-      ctx.fillStyle=e.ground?PAPER:"#fff";
-      ctx.lineWidth=e.ground?3:2.5;
-      rrect(e.x,e.y,e.w,e.h,e.ground?0:5); fillStroke();
-      if(e.ground){
-        ctx.lineWidth=2; ctx.strokeStyle="rgba(42,42,42,.15)";
-        rline(e.x+6,e.y+1,e.x+e.w-6,e.y+1);
-        ctx.strokeStyle=INK;
-      } else {
-        ctx.lineWidth=1.5; ctx.strokeStyle="rgba(42,42,42,.2)";
-        for(let i=e.x+10;i<e.x+e.w-8;i+=16) rline(i,e.y+e.h,i-3,e.y+e.h+5);
-        ctx.strokeStyle=INK;
+      if(e.type==="mover" && drawSpriteFit(ctx, propSprites.elevator, e.x+e.w/2, e.y+e.h/2, e.w+30, e.h+48)){
+        ctx.fillStyle=INK; ctx.font="600 11px PingFang SC,sans-serif"; ctx.textAlign="center";
+        ctx.fillText(e.label||"移动台",e.x+e.w/2,e.y+12); ctx.textAlign="left";
+        continue;
       }
+      drawSoftPlatform(ctx,e,{fill:e.ground?"#e9dfcc":"#f6e2bf"});
       if(e.type==="mover"){
         ctx.fillStyle=INK; ctx.font="600 11px PingFang SC,sans-serif"; ctx.textAlign="center";
         ctx.fillText(e.label||"移动台",e.x+e.w/2,e.y+12); ctx.textAlign="left";
       }
     } else if(e.type==="box"){
+      if(propSprites.box){
+        drawSpriteFit(ctx, propSprites.box, e.x+e.w/2, e.y+e.h/2, e.w+12, e.h+12);
+        ctx.font="600 10px PingFang SC,sans-serif"; ctx.textAlign="center"; ctx.fillStyle=INK;
+        ctx.fillText(e.label||"快递",e.x+e.w/2,e.y+e.h-8); ctx.textAlign="left";
+        continue;
+      }
       ctx.fillStyle="#fff"; ctx.lineWidth=2.5;
       rrect(e.x,e.y,e.w,e.h,4); fillStroke();
       ctx.strokeStyle=INK; ctx.lineWidth=2;
@@ -1127,9 +1132,7 @@ function drawWorld(){
       ctx.font="600 10px PingFang SC,sans-serif"; ctx.textAlign="center"; ctx.fillStyle=INK;
       ctx.fillText(e.label||"快递",e.x+e.w/2,e.y+e.h-8); ctx.textAlign="left";
     } else if(e.type==="spike"){
-      ctx.lineWidth=2; ctx.fillStyle="#fff8ea"; ctx.strokeStyle=INK;
-      for(let i=0;i<Math.floor(e.w/20);i++){ const sx=e.x+i*20;
-        ctx.beginPath(); ctx.moveTo(sx,e.y+e.h); ctx.lineTo(sx+10,e.y+jit(2)); ctx.lineTo(sx+20,e.y+e.h); ctx.closePath(); fillStroke(); }
+      drawPitMarker(ctx,e,e.label||"坑");
     } else if(e.type==="gate"){
       const barH=12;
       ctx.fillStyle=INK; ctx.lineWidth=2.5;
@@ -1150,6 +1153,7 @@ function drawWorld(){
       drawHazard(e);
     } else if(e.type==="coin"){
       const cx=e.x+e.w/2, cy=e.y+e.h/2, r=8;
+      if(drawSpriteFit(ctx, propSprites.coin, cx, cy, e.w-3, e.h-3, 0.92)) continue;
       ctx.fillStyle="#ffe08a"; ctx.strokeStyle=INK; ctx.lineWidth=2;
       ctx.beginPath(); ctx.arc(cx,cy,r,0,7); ctx.fill(); ctx.stroke();
       ctx.fillStyle="rgba(255,255,255,.45)"; ctx.beginPath(); ctx.arc(cx-2,cy-2,2.5,0,7); ctx.fill();
@@ -1223,7 +1227,7 @@ function drawEnemy(e){
     ctx.save();
     ctx.translate(cx,foot+bob);
     if(facing<0) ctx.scale(-1,1);
-    const dh=e.h+4, dw=dh*(spr.width/spr.height);
+    const dh=e.h+20, dw=dh*(spr.width/spr.height);
     ctx.imageSmoothingEnabled=true;
     ctx.drawImage(spr,-dw/2,-dh,dw,dh);
     ctx.restore();
@@ -1231,13 +1235,26 @@ function drawEnemy(e){
     drawEnemyVector(e,facing);
   }
 }
-bgSlots.forEach(s=>loadBg(s.id));
+bgSlots.forEach(s=>loadBg(s.src||s.id, s.alt, s.id));
 signSlots.forEach(s=>loadBg(s.id,s.alt));
 loadBg("prop_badge");
 
-loadSprite(IMG+"hero.png","idle");
-loadSprite(IMG+"hero_jump.png","jump");
-loadSprite(IMG+"hero_run.png","run");
+loadSprite(IMG+"generated/art-v2/hero-idle-v2.png","idle");
+loadSprite(IMG+"generated/art-v2/hero-jump-v2.png","jump");
+loadSprite(IMG+"generated/art-v2/hero-run-v2.png","run");
+loadSprite(IMG+"generated/art-v2/enemy-walk-v2.png","walk",enemySprites);
+loadSprite(IMG+"generated/art-v2/sprites/coffee.png","coffee",propSprites);
+loadSprite(IMG+"generated/art-v2/sprites/banana.png","banana",propSprites);
+loadSprite(IMG+"generated/art-v2/sprites/coin.png","coin",propSprites);
+loadSprite(IMG+"generated/art-v2/sprites/puddle.png","puddle",propSprites);
+loadSprite(IMG+"generated/art-v2/sprites/umbrella.png","umbrella",propSprites);
+loadSprite(IMG+"generated/art-v2/sprites/wet-sign.png","wetSign",propSprites);
+loadSprite(IMG+"generated/art-v2/sprites/printer.png","printer",propSprites);
+loadSprite(IMG+"generated/art-v2/sprites/box.png","box",propSprites);
+loadSprite(IMG+"generated/art-v2/sprites/elevator.png","elevator",propSprites);
+loadSprite(IMG+"generated/art-v2/sprites/badge.png","badge",propSprites);
+loadSprite(IMG+"generated/art-v2/sprites/turnstile.png","turnstile",propSprites);
+loadSprite(IMG+"generated/art-v2/sprites/dream-shield.png","shield",effectSprites);
 
 function drawPlayer(){
   const p=player; const cx=p.x+p.w/2-camX, footY=p.y+p.h;
@@ -1274,6 +1291,11 @@ function drawPlayer(){
 function drawDreamAura(cx, cy){
   const pulse=(Math.sin(T*10)+1)/2;
   ctx.save();
+  if(effectSprites.shield){
+    ctx.globalCompositeOperation="lighter";
+    drawSpriteFit(ctx, effectSprites.shield, cx, cy, 104+pulse*10, 118+pulse*10, 0.78);
+    ctx.globalCompositeOperation="source-over";
+  }
   ctx.globalCompositeOperation="lighter";
   for(let i=0;i<3;i++){
     const r=30+i*11+pulse*7;
@@ -1408,6 +1430,8 @@ function drawParticles(){
 }
 
 function render(){
+  const auditCam=new URLSearchParams(location.search).get("cam");
+  if(auditCam!==null) camX=Math.max(0,Math.min(WORLD_W-VW,Number(auditCam)||0));
   ctx.save();
   if(shakeT>0){ shakeT-=0.016; ctx.translate((Math.random()-0.5)*6,(Math.random()-0.5)*6); }
   drawBackground(); drawWorld(); drawParticles(); drawPlayer(); drawFog();
@@ -1444,6 +1468,8 @@ MTUI.init({
   homeUrl:"../index.html",
   defaultHint:"打卡机说：您已迟到 1 小时。梦里可以短暂无敌。",
   startTitle:"到公司了",
+  startImage:"../assets/images/generated/level2-opening-banner.webp",
+  startImageAlt:"到公司了关卡插画",
   startBody:"键盘或屏幕按钮操作。进公司、过闸机、躲开办公室里的各种意外。",
   startBtn:"打卡上班",
   ensureAudio,

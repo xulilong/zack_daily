@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>MT大冒险 · CEO就职</title>
-<link rel="preload" as="image" href="../assets/images/index.webp" type="image/webp">
+<link rel="preload" as="image" href="../assets/images/generated/dream-wakeup-ending-banner.webp" type="image/webp">
 <style>
   :root{
     --panel:rgba(18,32,48,.78);
@@ -243,8 +243,8 @@
 
 <div class="page" id="page">
   <picture>
-    <source srcset="../assets/images/index.webp" type="image/webp">
-    <img class="bg" id="bg" src="../assets/images/index.png" alt="卧室">
+    <source srcset="../assets/images/generated/dream-wakeup-ending-banner.webp" type="image/webp">
+    <img class="bg" id="bg" src="../assets/images/generated/dream-wakeup-ending-banner.png" alt="梦醒了">
   </picture>
   <div class="shade" aria-hidden="true"></div>
   <div class="flash" id="flash"></div>
@@ -429,7 +429,7 @@ function startStory(name){
   page.classList.add("show");
   btnSkip.classList.add("show");
   document.title="MT大冒险 · 就职与梦醒";
-  new Image().src="../assets/images/index.webp";
+  new Image().src="../assets/images/generated/dream-wakeup-ending-banner.webp";
   stepIdx=-1;
   if(window.MTAnalytics) MTAnalytics.track("epilogue_start", { name });
   nextStep(true);

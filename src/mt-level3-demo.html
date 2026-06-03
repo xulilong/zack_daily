@@ -181,7 +181,7 @@ const ents=[
   {type:"platform",x:180,y:398,w:108,h:16},
   {type:"platform",x:340,y:352,w:98,h:16},
   {type:"platform",x:480,y:308,w:92,h:16},
-  {type:"lozenge",x:498,y:266,w:36,h:40,label:"润喉糖",initX:498,initY:266},
+  {type:"lozenge",x:214,y:358,w:36,h:40,label:"润喉糖",initX:214,initY:358},
   {type:"mic",x:590,y:GROUND-64,w:64,h:64,charge:0,open:false,need:0.78,unlock:"b1",slide:1},
   {type:"enemy",x:660,y:GROUND-46,w:36,h:46,vx:-55,patrol:[500,820],label:"插话",interrupt:true},
 
@@ -280,7 +280,7 @@ const ents=[
 ];
 
 const bgSlots=[
-  {id:"bg_3_1_sky", x:0, y:0, w:WORLD_W, h:180},
+  {id:"bg_3_1_sky", src:"generated/level3-sky-panorama-borderless", x:0, y:0, w:WORLD_W, h:180},
 ];
 
 const signSlots=[
@@ -1182,9 +1182,25 @@ function rrect(x,y,w,h,r){ ctx.beginPath();
 
 function fillStroke(){ ctx.fill(); ctx.stroke(); }
 
+function drawMeetingStep(e){
+  drawSoftPlatform(ctx,e,{fill:"#f5dc88",stroke:"#2a2a2a"});
+  ctx.save();
+  ctx.fillStyle="rgba(232,184,74,.32)";
+  ctx.beginPath();
+  ctx.moveTo(e.x+e.w-18,e.y+2);
+  ctx.lineTo(e.x+e.w-2,e.y+2);
+  ctx.lineTo(e.x+e.w-2,e.y+18);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle="rgba(37,37,37,.28)";
+  ctx.beginPath(); ctx.arc(e.x+10,e.y+6,2.2,0,7); ctx.fill();
+  ctx.restore();
+}
+
 function drawCoffee(e){
   const cx=e.x+e.w/2, bob=Math.sin(T*5)*2.5;
   const y=e.y+bob;
+  if(drawSpriteFit(ctx, propSprites.coffee, cx, y+25, e.w-14, e.h-12)) return;
 
   // 文案「咖啡」
   ctx.fillStyle="#fff9f0"; ctx.strokeStyle=INK; ctx.lineWidth=2.5;
@@ -1208,6 +1224,7 @@ function drawCoffee(e){
 
 function drawLozenge(e){
   const cx=e.x+e.w/2, bob=Math.sin(T*4)*2, y=e.y+bob;
+  if(drawSpriteFit(ctx, propSprites.lozenge, cx, y+24, e.w+26, e.h+18)) return;
   ctx.fillStyle="#fff6e8"; ctx.strokeStyle=INK; ctx.lineWidth=2;
   rrect(cx-16,y+8,32,24,5); fillStroke();
   ctx.fillStyle="#e8b84a"; ctx.strokeStyle=INK; ctx.lineWidth=1.5;
@@ -1219,6 +1236,7 @@ function drawLozenge(e){
 
 function drawBanana(e){
   const cx=e.x+e.w/2, cy=e.y+e.h/2;
+  if(drawSpriteFit(ctx, propSprites.banana, cx, cy-3, e.w-4, e.h+8)) return;
   ctx.fillStyle="#ffe566"; ctx.strokeStyle=INK; ctx.lineWidth=2;
   ctx.beginPath();
   ctx.moveTo(cx-14,cy+2); ctx.quadraticCurveTo(cx,cy-8,cx+14,cy+2);
@@ -1229,6 +1247,7 @@ function drawBanana(e){
 
 function drawPuddle(e){
   const cx=e.x+e.w/2, cy=e.y+e.h/2+2, rx=e.w/2, ry=5+Math.sin(T*4+cx)*0.8;
+  if(drawSpriteFit(ctx, propSprites.puddle, cx, cy-2, e.w+18, e.h+24, 0.9)) return;
   ctx.fillStyle="rgba(100,165,210,.35)"; ctx.strokeStyle="rgba(42,42,42,.25)"; ctx.lineWidth=1.5;
   ctx.beginPath(); ctx.ellipse(cx,cy,rx,ry,0,0,7); ctx.fill(); ctx.stroke();
   ctx.strokeStyle="rgba(255,255,255,.5)"; ctx.lineWidth=1;
@@ -1237,6 +1256,7 @@ function drawPuddle(e){
 
 function drawBadge(e){
   const cx=e.x+e.w/2, bob=Math.sin(T*4)*2;
+  if(drawSpriteFit(ctx, propSprites.badge, cx, e.y+bob+22, e.w+4, e.h+8)) return;
   ctx.fillStyle="#fff"; ctx.strokeStyle=INK; ctx.lineWidth=2;
   rrect(cx-14,e.y+bob,28,36,4); fillStroke();
   ctx.fillStyle=INK; ctx.font="800 9px PingFang SC,sans-serif"; ctx.textAlign="center";
@@ -1248,6 +1268,10 @@ function drawBadge(e){
 function drawTurnstile(e){
   const cx=e.x+e.w/2, open=e.open||hasBadge;
   const pct=open?1:Math.min(1,e.charge||0);
+  if(propSprites.turnstile){
+    drawSpriteFit(ctx, propSprites.turnstile, cx, e.y+e.h/2, e.w+8, e.h+10);
+    return;
+  }
   ctx.fillStyle="#d0cdc6"; ctx.strokeStyle=INK; ctx.lineWidth=2.5;
   rrect(e.x,e.y+8,e.w,e.h-8,3); fillStroke();
   ctx.fillStyle=open?"#7ec87a":"#c9956a";
@@ -1268,6 +1292,14 @@ function drawMic(e){
   const cx=e.x+e.w/2, open=e.open;
   const need=e.need||0.82;
   const pct=open?1:Math.min(1,(e.charge||0)/need);
+  if(propSprites.mic){
+    drawSpriteFit(ctx, propSprites.mic, cx, e.y+e.h/2, e.w+12, e.h+14);
+    if(!open && pct>0.04){
+      ctx.fillStyle="rgba(37,37,37,.6)"; ctx.font="600 9px PingFang SC,sans-serif"; ctx.textAlign="center";
+      ctx.fillText(e.crouchOnly?"蹲":(pct>0.2?"停":"…"),cx,e.y+34); ctx.textAlign="left";
+    }
+    return;
+  }
   ctx.fillStyle="#3a3a3a"; ctx.strokeStyle=INK; ctx.lineWidth=2.5;
   rrect(e.x+10,e.y+4,e.w-20,e.h-28,4); fillStroke();
   ctx.fillStyle="#888"; ctx.strokeStyle=INK; ctx.lineWidth=2;
@@ -1371,8 +1403,7 @@ function drawDoor(e){
     rline(e.x+e.w/2,e.y+6,e.x+e.w/2,e.y+e.h-6);
     ctx.beginPath(); ctx.arc(e.x+e.w/2,e.y+e.h/2,4,0,7); ctx.fillStyle=INK; ctx.fill();
   }
-  ctx.fillStyle=open?"#3a7040":"#555"; ctx.font="700 9px PingFang SC,sans-serif"; ctx.textAlign="center";
-  ctx.fillText(open?"开":"关",e.x+e.w/2,e.y+14); ctx.textAlign="left";
+  ctx.textAlign="left";
 }
 
 function drawHazard(e){
@@ -1480,18 +1511,13 @@ function drawBackground(){
     }
   }
 
-  ctx.fillStyle=SIDE; ctx.fillRect(0,GROUND,WORLD_W,100);
+  drawSceneDepth(ctx,WORLD_W,GROUND,{wall:"#e9e4d9",wall2:"#dcd2c2",floor:SIDE});
   ctx.fillStyle=SIDE2; ctx.fillRect(0,GROUND,WORLD_W,3);
   ctx.strokeStyle="rgba(37,37,37,.07)"; ctx.lineWidth=1;
   for(let x=0;x<WORLD_W;x+=48){
     rline(x,GROUND+18,x+24,GROUND+18);
     rline(x+24,GROUND+38,x+48,GROUND+38);
   }
-
-  // 会议室隔断
-  ctx.strokeStyle=INK; ctx.lineWidth=2; ctx.globalAlpha=0.1;
-  for(let x=1200;x<6400;x+=240) rline(x,GROUND-130,x,GROUND-18);
-  ctx.globalAlpha=1;
 
   for(const s of signSlots) drawSign(s);
 
@@ -1500,13 +1526,6 @@ function drawBackground(){
   rrect(520,GROUND-86,72,46,5); fillStroke();
   ctx.fillStyle=INK; ctx.font="700 10px PingFang SC,sans-serif"; ctx.textAlign="center";
   ctx.fillText("秘书",556,GROUND-58); ctx.textAlign="left";
-
-  // 等候沙发（简笔）
-  ctx.fillStyle="#e8dfd3"; ctx.strokeStyle=INK; ctx.lineWidth=2;
-  for(let i=0;i<3;i++){
-    const sx=120+i*95;
-    rrect(sx,GROUND-42,70,28,6); ctx.fill(); ctx.stroke();
-  }
 
   // 迟到榜
   ctx.fillStyle="#fff8ea"; ctx.strokeStyle=INK; ctx.lineWidth=2.5;
@@ -1529,11 +1548,6 @@ function drawWorld(){
 
   for(const e of ents){
     if(e.hidden && e.unlockGroup){
-      ctx.setLineDash([8,6]); ctx.strokeStyle="rgba(201,149,106,.55)"; ctx.lineWidth=2;
-      rrect(e.x,e.y,e.w,e.h,4); ctx.stroke(); ctx.setLineDash([]);
-      ctx.fillStyle="rgba(201,149,106,.12)"; ctx.fillRect(e.x,e.y,e.w,e.h);
-      ctx.fillStyle=INK; ctx.font="600 10px PingFang SC,sans-serif"; ctx.textAlign="center";
-      ctx.fillText("等翻页",e.x+e.w/2,e.y+e.h/2+4); ctx.textAlign="left";
       continue;
     }
     if(e.hidden) continue;
@@ -1542,18 +1556,8 @@ function drawWorld(){
         ctx.fillStyle="rgba(126,200,122,.22)";
         rrect(e.x,e.y-4,e.w,e.h+4,6); ctx.fill();
       }
-      ctx.fillStyle=e.ground?PAPER:"#fff";
-      ctx.lineWidth=e.ground?3:2.5;
-      rrect(e.x,e.y,e.w,e.h,e.ground?0:5); fillStroke();
-      if(e.ground){
-        ctx.lineWidth=2; ctx.strokeStyle="rgba(42,42,42,.15)";
-        rline(e.x+6,e.y+1,e.x+e.w-6,e.y+1);
-        ctx.strokeStyle=INK;
-      } else {
-        ctx.lineWidth=1.5; ctx.strokeStyle="rgba(42,42,42,.2)";
-        for(let i=e.x+10;i<e.x+e.w-8;i+=16) rline(i,e.y+e.h,i-3,e.y+e.h+5);
-        ctx.strokeStyle=INK;
-      }
+      if(!e.ground && e.type==="platform" && e.h<=18 && e.w<=130) drawMeetingStep(e);
+      else drawSoftPlatform(ctx,e,{fill:e.ground?"#e9dfcc":"#f6e2bf"});
       if(e.type==="mover"){
         ctx.fillStyle=INK; ctx.font="600 11px PingFang SC,sans-serif"; ctx.textAlign="center";
         ctx.fillText(e.label||"移动台",e.x+e.w/2,e.y+12); ctx.textAlign="left";
@@ -1566,9 +1570,7 @@ function drawWorld(){
       ctx.font="600 10px PingFang SC,sans-serif"; ctx.textAlign="center"; ctx.fillStyle=INK;
       ctx.fillText(e.label||"快递",e.x+e.w/2,e.y+e.h-8); ctx.textAlign="left";
     } else if(e.type==="spike"){
-      ctx.lineWidth=2; ctx.fillStyle="#fff8ea"; ctx.strokeStyle=INK;
-      for(let i=0;i<Math.floor(e.w/20);i++){ const sx=e.x+i*20;
-        ctx.beginPath(); ctx.moveTo(sx,e.y+e.h); ctx.lineTo(sx+10,e.y+jit(2)); ctx.lineTo(sx+20,e.y+e.h); ctx.closePath(); fillStroke(); }
+      drawPitMarker(ctx,e,e.label||"坑");
     } else if(e.type==="gate"){
       const barH=12;
       ctx.fillStyle=INK; ctx.lineWidth=2.5;
@@ -1595,6 +1597,7 @@ function drawWorld(){
       drawHazard(e);
     } else if(e.type==="coin"){
       const cx=e.x+e.w/2, cy=e.y+e.h/2, r=8;
+      if(drawSpriteFit(ctx, propSprites.coin, cx, cy, e.w-3, e.h-3, 0.92)) continue;
       ctx.fillStyle="#ffe08a"; ctx.strokeStyle=INK; ctx.lineWidth=2;
       ctx.beginPath(); ctx.arc(cx,cy,r,0,7); ctx.fill(); ctx.stroke();
       ctx.fillStyle="rgba(255,255,255,.45)"; ctx.beginPath(); ctx.arc(cx-2,cy-2,2.5,0,7); ctx.fill();
@@ -1672,7 +1675,7 @@ function drawEnemy(e){
     ctx.save();
     ctx.translate(cx,foot+bob);
     if(facing<0) ctx.scale(-1,1);
-    const dh=e.h+4, dw=dh*(spr.width/spr.height);
+    const dh=e.h+20, dw=dh*(spr.width/spr.height);
     ctx.imageSmoothingEnabled=true;
     ctx.drawImage(spr,-dw/2,-dh,dw,dh);
     ctx.restore();
@@ -1680,12 +1683,23 @@ function drawEnemy(e){
     drawEnemyVector(e,facing);
   }
 }
-bgSlots.forEach(s=>loadBg(s.id));
+bgSlots.forEach(s=>loadBg(s.src||s.id, s.alt, s.id));
 signSlots.forEach(s=>loadBg(s.id,s.alt));
 
-loadSprite(IMG+"hero.png","idle");
-loadSprite(IMG+"hero_jump.png","jump");
-loadSprite(IMG+"hero_run.png","run");
+loadSprite(IMG+"generated/art-v2/hero-idle-v2.png","idle");
+loadSprite(IMG+"generated/art-v2/hero-jump-v2.png","jump");
+loadSprite(IMG+"generated/art-v2/hero-run-v2.png","run");
+loadSprite(IMG+"generated/art-v2/enemy-walk-v2.png","walk",enemySprites);
+loadSprite(IMG+"generated/art-v2/sprites/coffee.png","coffee",propSprites);
+loadSprite(IMG+"generated/art-v2/sprites/banana.png","banana",propSprites);
+loadSprite(IMG+"generated/art-v2/sprites/coin.png","coin",propSprites);
+loadSprite(IMG+"generated/art-v2/sprites/badge.png","badge",propSprites);
+loadSprite(IMG+"generated/art-v2/sprites/mic.png","mic",propSprites);
+loadSprite(IMG+"generated/art-v2/sprites/turnstile.png","turnstile",propSprites);
+loadSprite(IMG+"generated/art-v2/sprites/candy.png","lozenge",propSprites);
+loadSprite(IMG+"generated/art-v2/sprites/sticky-note.png","sticky",propSprites);
+loadSprite(IMG+"generated/art-v2/sprites/pan.png","pan",propSprites);
+loadSprite(IMG+"generated/art-v2/sprites/dream-quiet.png","quiet",effectSprites);
 
 function drawPlayer(){
   const p=player; const cx=p.x+p.w/2-camX, footY=p.y+p.h;
@@ -1722,6 +1736,11 @@ function drawPlayer(){
 function drawSilenceField(cx, cy){
   const pulse=(Math.sin(T*7)+1)/2;
   ctx.save();
+  if(effectSprites.quiet){
+    ctx.globalCompositeOperation="lighter";
+    drawSpriteFit(ctx, effectSprites.quiet, cx, cy-18, 116+pulse*8, 92+pulse*6, 0.8);
+    ctx.globalCompositeOperation="source-over";
+  }
   ctx.globalAlpha=0.26;
   ctx.strokeStyle="#58a6b8";
   ctx.lineWidth=2.5;
@@ -1848,6 +1867,7 @@ function drawGuyVector(p){
   }
 }
 function drawSticky(e){
+  if(drawSpriteFit(ctx, propSprites.sticky, e.x+e.w/2, e.y+e.h/2, e.w+14, e.h+18)) return;
   ctx.fillStyle="#fff6a8"; ctx.strokeStyle=INK; ctx.lineWidth=1.8;
   rrect(e.x,e.y,e.w,e.h,2); fillStroke();
   ctx.strokeStyle="rgba(37,37,37,.25)"; ctx.lineWidth=1;
@@ -1862,6 +1882,11 @@ function drawProp(p){
   ctx.translate(p.x+p.w/2,p.y+p.h/2);
   ctx.rotate(p.rot||0);
   if(p.kind==="wok"){
+    if(propSprites.pan){
+      drawSpriteFit(ctx, propSprites.pan, 0, 0, p.w+26, p.h+18);
+      ctx.restore();
+      return;
+    }
     ctx.fillStyle="#5a5a5a"; ctx.strokeStyle=INK; ctx.lineWidth=2;
     ctx.beginPath(); ctx.ellipse(0,2,p.w/2,p.h/2.2,0,0,7); ctx.fill(); ctx.stroke();
     ctx.strokeStyle="#888"; ctx.lineWidth=2;
@@ -1914,6 +1939,8 @@ function drawParticles(){
 }
 
 function render(){
+  const auditCam=new URLSearchParams(location.search).get("cam");
+  if(auditCam!==null) camX=Math.max(0,Math.min(WORLD_W-VW,Number(auditCam)||0));
   ctx.save();
   if(shakeT>0){ shakeT-=0.016; ctx.translate((Math.random()-0.5)*6,(Math.random()-0.5)*6); }
   drawBackground(); drawWorld(); drawProps(); drawSpits(); drawParticles(); drawPlayer(); drawFog();
@@ -1950,6 +1977,8 @@ MTUI.init({
   homeUrl:"../index.html",
   defaultHint:"秘书：先拿润喉糖。梦里可以让会议静音。",
   startTitle:"会议室",
+  startImage:"../assets/images/generated/level3-opening-banner.webp",
+  startImageAlt:"会议室关卡插画",
   startBody:"先拿润喉糖，清掉插话同事，在话筒前停稳讲完每一页。",
   startBtn:"进去讲",
   ensureAudio,

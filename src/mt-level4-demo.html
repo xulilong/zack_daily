@@ -232,7 +232,7 @@ const ents=[
 ];
 
 const bgSlots=[
-  {id:"bg_4_1_sky", x:0, y:0, w:WORLD_W, h:180},
+  {id:"bg_4_1_sky", src:"generated/level4-sky-panorama-borderless", x:0, y:0, w:WORLD_W, h:180},
 ];
 
 const signSlots=[
@@ -568,6 +568,7 @@ function drawBonusPickup(c){
     ctx.fillStyle="#fff"; ctx.font="800 12px PingFang SC,sans-serif"; ctx.textAlign="center";
     ctx.fillText("福",cx,cy+4); ctx.textAlign="left";
   } else {
+    if(drawSpriteFit(ctx, propSprites.coin, cx, cy, c.w-2, c.h-2, 0.94)) return;
     const r=Math.max(c.w,c.h)/2;
     ctx.fillStyle="#ffe08a"; ctx.strokeStyle=INK; ctx.lineWidth=2;
     ctx.beginPath(); ctx.arc(cx,cy,r,0,7); ctx.fill(); ctx.stroke();
@@ -1242,6 +1243,7 @@ function fillStroke(){ ctx.fill(); ctx.stroke(); }
 function drawCoffee(e){
   const cx=e.x+e.w/2, bob=Math.sin(T*5)*2.5;
   const y=e.y+bob;
+  if(drawSpriteFit(ctx, propSprites.coffee, cx, y+25, e.w-14, e.h-12)) return;
 
   // 文案「咖啡」
   ctx.fillStyle="#fff9f0"; ctx.strokeStyle=INK; ctx.lineWidth=2.5;
@@ -1265,6 +1267,7 @@ function drawCoffee(e){
 
 function drawBanana(e){
   const cx=e.x+e.w/2, cy=e.y+e.h/2;
+  if(drawSpriteFit(ctx, propSprites.banana, cx, cy-3, e.w-4, e.h+8)) return;
   ctx.fillStyle="#ffe566"; ctx.strokeStyle=INK; ctx.lineWidth=2;
   ctx.beginPath();
   ctx.moveTo(cx-14,cy+2); ctx.quadraticCurveTo(cx,cy-8,cx+14,cy+2);
@@ -1276,6 +1279,7 @@ function drawBanana(e){
 function drawPuddle(e){
   const cx=e.x+e.w/2, cy=e.y+e.h/2+2, rx=e.w/2, ry=5+Math.sin(T*4+cx)*0.8;
   const oil=e.kind==="oil";
+  if(drawSpriteFit(ctx, oil?propSprites.mud:propSprites.puddle, cx, cy-2, e.w+18, e.h+24, 0.9)) return;
   ctx.fillStyle=oil?"rgba(160,120,45,.42)":"rgba(100,165,210,.35)";
   ctx.strokeStyle=oil?"rgba(80,60,20,.35)":"rgba(42,42,42,.25)"; ctx.lineWidth=1.5;
   ctx.beginPath(); ctx.ellipse(cx,cy,rx,ry,0,0,7); ctx.fill(); ctx.stroke();
@@ -1285,6 +1289,7 @@ function drawPuddle(e){
 
 function drawBadge(e){
   const cx=e.x+e.w/2, bob=Math.sin(T*4)*2;
+  if(drawSpriteFit(ctx, propSprites.badge, cx, e.y+bob+22, e.w+4, e.h+8)) return;
   ctx.fillStyle="#fff"; ctx.strokeStyle=INK; ctx.lineWidth=2;
   rrect(cx-14,e.y+bob,28,36,4); fillStroke();
   ctx.fillStyle=INK; ctx.font="800 9px PingFang SC,sans-serif"; ctx.textAlign="center";
@@ -1296,6 +1301,10 @@ function drawBadge(e){
 function drawTurnstile(e){
   const cx=e.x+e.w/2, open=e.open;
   const pct=open?1:Math.min(1,e.charge||0);
+  if(propSprites.turnstile){
+    drawSpriteFit(ctx, propSprites.turnstile, cx, e.y+e.h/2, e.w+8, e.h+10);
+    return;
+  }
   ctx.fillStyle="#d0cdc6"; ctx.strokeStyle=INK; ctx.lineWidth=2.5;
   rrect(e.x,e.y+8,e.w,e.h-8,3); fillStroke();
   ctx.fillStyle=open?"#7ec87a":"#c9956a";
@@ -1315,6 +1324,7 @@ function drawTurnstile(e){
 function drawSlippers(e){
   const cx=e.x+e.w/2, bob=Math.sin(T*4)*2, y=e.y+bob;
   if(e.label==="防滑贴"){
+    if(drawSpriteFit(ctx, propSprites.wetSign, cx, y+28, e.w+26, e.h+14)) return;
     ctx.fillStyle="#fff8e6"; ctx.strokeStyle=INK; ctx.lineWidth=2;
     rrect(cx-16,y+18,32,28,4); fillStroke();
     ctx.strokeStyle="rgba(201,149,106,.6)"; ctx.lineWidth=1.5;
@@ -1323,6 +1333,7 @@ function drawSlippers(e){
     ctx.fillText("防滑贴",cx,y+12); ctx.textAlign="left";
     return;
   }
+  if(drawSpriteFit(ctx, propSprites.umbrella, cx, y+25, e.w+18, e.h+14)) return;
   ctx.fillStyle="#7aabcc"; ctx.strokeStyle=INK; ctx.lineWidth=2;
   ctx.beginPath(); ctx.ellipse(cx-8,y+36,10,5,0,0,7); ctx.fill(); ctx.stroke();
   ctx.beginPath(); ctx.ellipse(cx+8,y+36,10,5,0,0,7); ctx.fill(); ctx.stroke();
@@ -1333,6 +1344,7 @@ function drawSlippers(e){
 }
 function drawUmbrella(e){
   const cx=e.x+e.w/2, bob=Math.sin(T*4)*2, y=e.y+bob;
+  if(drawSpriteFit(ctx, propSprites.umbrella, cx, y+25, e.w+18, e.h+14)) return;
   ctx.strokeStyle=INK; ctx.lineWidth=2.5; ctx.lineCap="round";
   rline(cx,y+38,cx,y+52);
   ctx.fillStyle="#e85d5d"; ctx.strokeStyle=INK; ctx.lineWidth=2;
@@ -1345,6 +1357,7 @@ function drawUmbrella(e){
 function drawTray(e){
   const cx=e.x+e.w/2, bob=Math.sin(T*4)*2, y=e.y+bob;
   const served=isFoodServed();
+  if(drawSpriteFit(ctx, propSprites.tray, cx, y+18, e.w+30, e.h+22, served?1:0.72)) return;
   ctx.fillStyle="#e8e4dc"; ctx.strokeStyle=INK; ctx.lineWidth=2.5;
   rrect(cx-20,y+8,40,6,2); fillStroke();
   ctx.fillStyle="#fff"; ctx.strokeStyle=INK; ctx.lineWidth=2;
@@ -1434,8 +1447,7 @@ function drawDoor(e){
     rline(e.x+e.w/2,e.y+6,e.x+e.w/2,e.y+e.h-6);
     ctx.beginPath(); ctx.arc(e.x+e.w/2,e.y+e.h/2,4,0,7); ctx.fillStyle=INK; ctx.fill();
   }
-  ctx.fillStyle=open?"#3a7040":"#555"; ctx.font="700 9px PingFang SC,sans-serif"; ctx.textAlign="center";
-  ctx.fillText(open?"开":"关",e.x+e.w/2,e.y+14); ctx.textAlign="left";
+  ctx.textAlign="left";
 }
 
 function drawHazard(e){
@@ -1520,7 +1532,7 @@ function drawBackground(){
     }
   }
 
-  ctx.fillStyle=SIDE; ctx.fillRect(0,GROUND,WORLD_W,100);
+  drawSceneDepth(ctx,WORLD_W,GROUND,{wall:"#f1e4ce",wall2:"#e3cfad",floor:SIDE});
   ctx.fillStyle=SIDE2; ctx.fillRect(0,GROUND,WORLD_W,3);
   ctx.strokeStyle="rgba(37,37,37,.07)"; ctx.lineWidth=1;
   for(let x=0;x<WORLD_W;x+=48){
@@ -1531,11 +1543,6 @@ function drawBackground(){
   // 排队黄线
   ctx.strokeStyle="rgba(201,149,106,.55)"; ctx.lineWidth=3; ctx.setLineDash([12,8]);
   rline(180,GROUND-6,780,GROUND-6); ctx.setLineDash([]);
-
-  // 上层路线提示
-  ctx.strokeStyle=INK; ctx.lineWidth=2; ctx.globalAlpha=0.1;
-  for(let x=1900;x<5100;x+=180) rline(x,GROUND-100,x,GROUND-180);
-  ctx.globalAlpha=1;
 
   for(const s of signSlots) drawSign(s);
 
@@ -1577,22 +1584,20 @@ function drawWorld(){
     if(e.type==="platform"||e.type==="mover"){
       const upperBlocked=trayBlocksUpper()&&isUpperPlat(e);
       const isCeiling=e.route==="trayCeiling";
-      ctx.fillStyle=e.ground?PAPER:(upperBlocked?"rgba(255,235,235,.92)":(isCeiling?"rgba(42,42,42,.18)":"#fff"));
-      ctx.lineWidth=e.ground?3:(isCeiling?2:2.5);
-      if(upperBlocked) ctx.setLineDash([6,4]);
-      rrect(e.x,e.y,e.w,e.h,e.ground?0:5); fillStroke();
-      if(upperBlocked) ctx.setLineDash([]);
+      if(e.type==="mover" && drawSpriteFit(ctx, propSprites.cart, e.x+e.w/2, e.y+e.h/2, e.w+28, e.h+34)){
+        ctx.fillStyle=INK; ctx.font="600 11px PingFang SC,sans-serif"; ctx.textAlign="center";
+        ctx.fillText(e.label||"移动台",e.x+e.w/2,e.y+12); ctx.textAlign="left";
+        continue;
+      }
+      drawSoftPlatform(ctx,e,{
+        fill:e.ground?"#ead9bd":(upperBlocked?"#f4dad5":(isCeiling?"rgba(42,42,42,.16)":"#f4d6a5")),
+        danger:upperBlocked
+      });
       if(e.ground){
-        ctx.lineWidth=2; ctx.strokeStyle="rgba(42,42,42,.15)";
-        rline(e.x+6,e.y+1,e.x+e.w-6,e.y+1);
-        ctx.strokeStyle=INK;
       } else if(isCeiling){
         ctx.fillStyle="rgba(42,42,42,.35)"; ctx.font="700 10px PingFang SC,sans-serif"; ctx.textAlign="center";
         ctx.fillText("端盘禁入",e.x+e.w/2,e.y+e.h/2+4); ctx.textAlign="left";
       } else {
-        ctx.lineWidth=1.5; ctx.strokeStyle="rgba(42,42,42,.2)";
-        for(let i=e.x+10;i<e.x+e.w-8;i+=16) rline(i,e.y+e.h,i-3,e.y+e.h+5);
-        ctx.strokeStyle=INK;
         if(upperBlocked){
           ctx.fillStyle="#b44"; ctx.font="800 11px PingFang SC,sans-serif"; ctx.textAlign="center";
           ctx.fillText("禁",e.x+e.w/2,e.y+e.h/2+4); ctx.textAlign="left";
@@ -1610,9 +1615,7 @@ function drawWorld(){
       ctx.font="600 10px PingFang SC,sans-serif"; ctx.textAlign="center"; ctx.fillStyle=INK;
       ctx.fillText(e.label||"快递",e.x+e.w/2,e.y+e.h-8); ctx.textAlign="left";
     } else if(e.type==="spike"){
-      ctx.lineWidth=2; ctx.fillStyle="#fff8ea"; ctx.strokeStyle=INK;
-      for(let i=0;i<Math.floor(e.w/20);i++){ const sx=e.x+i*20;
-        ctx.beginPath(); ctx.moveTo(sx,e.y+e.h); ctx.lineTo(sx+10,e.y+jit(2)); ctx.lineTo(sx+20,e.y+e.h); ctx.closePath(); fillStroke(); }
+      drawPitMarker(ctx,e,e.label||"坑");
     } else if(e.type==="gate"){
       const barH=12;
       ctx.fillStyle=INK; ctx.lineWidth=2.5;
@@ -1639,6 +1642,7 @@ function drawWorld(){
       drawHazard(e);
     } else if(e.type==="coin"){
       const cx=e.x+e.w/2, cy=e.y+e.h/2, r=8;
+      if(drawSpriteFit(ctx, propSprites.coin, cx, cy, e.w-3, e.h-3, 0.92)) continue;
       ctx.fillStyle="#ffe08a"; ctx.strokeStyle=INK; ctx.lineWidth=2;
       ctx.beginPath(); ctx.arc(cx,cy,r,0,7); ctx.fill(); ctx.stroke();
       ctx.fillStyle="rgba(255,255,255,.45)"; ctx.beginPath(); ctx.arc(cx-2,cy-2,2.5,0,7); ctx.fill();
@@ -1730,7 +1734,7 @@ function drawEnemy(e){
     ctx.save();
     ctx.translate(cx,foot+bob);
     if(facing<0) ctx.scale(-1,1);
-    const dh=e.h+4, dw=dh*(spr.width/spr.height);
+    const dh=e.h+20, dw=dh*(spr.width/spr.height);
     ctx.imageSmoothingEnabled=true;
     ctx.drawImage(spr,-dw/2,-dh,dw,dh);
     ctx.restore();
@@ -1738,12 +1742,25 @@ function drawEnemy(e){
     drawEnemyVector(e,facing);
   }
 }
-bgSlots.forEach(s=>loadBg(s.id));
+bgSlots.forEach(s=>loadBg(s.src||s.id, s.alt, s.id));
 signSlots.forEach(s=>loadBg(s.id,s.alt));
 
-loadSprite(IMG+"hero.png","idle");
-loadSprite(IMG+"hero_jump.png","jump");
-loadSprite(IMG+"hero_run.png","run");
+loadSprite(IMG+"generated/art-v2/hero-idle-v2.png","idle");
+loadSprite(IMG+"generated/art-v2/hero-jump-v2.png","jump");
+loadSprite(IMG+"generated/art-v2/hero-run-v2.png","run");
+loadSprite(IMG+"generated/art-v2/enemy-walk-v2.png","walk",enemySprites);
+loadSprite(IMG+"generated/art-v2/sprites/coffee.png","coffee",propSprites);
+loadSprite(IMG+"generated/art-v2/sprites/banana.png","banana",propSprites);
+loadSprite(IMG+"generated/art-v2/sprites/coin.png","coin",propSprites);
+loadSprite(IMG+"generated/art-v2/sprites/badge.png","badge",propSprites);
+loadSprite(IMG+"generated/art-v2/sprites/tray.png","tray",propSprites);
+loadSprite(IMG+"generated/art-v2/sprites/cart.png","cart",propSprites);
+loadSprite(IMG+"generated/art-v2/sprites/puddle.png","puddle",propSprites);
+loadSprite(IMG+"generated/art-v2/sprites/mud.png","mud",propSprites);
+loadSprite(IMG+"generated/art-v2/sprites/umbrella.png","umbrella",propSprites);
+loadSprite(IMG+"generated/art-v2/sprites/wet-sign.png","wetSign",propSprites);
+loadSprite(IMG+"generated/art-v2/sprites/dream-parting.png","parting",effectSprites);
+loadSprite(IMG+"generated/art-v2/sprites/dream-tray-glow.png","trayGlow",effectSprites);
 
 function drawPlayer(){
   const p=player; const cx=p.x+p.w/2-camX, footY=p.y+p.h;
@@ -1777,13 +1794,18 @@ function drawPlayer(){
   ctx.restore();
   if(fx.tray>0){
     ctx.save();
-    ctx.translate(p.x+p.w/2-camX, p.y+p.h-52);
-    if(isDreamActive()) ctx.translate(Math.sin(T*7)*4, -12-Math.sin(T*9)*4);
-    if(p.facing<0) ctx.scale(-1,1);
-    ctx.fillStyle="#e8e4dc"; ctx.strokeStyle=INK; ctx.lineWidth=2;
-    rrect(-16,-4,32,5,2); ctx.fill(); ctx.stroke();
-    ctx.fillStyle="#fff"; rrect(-12,1,24,14,2); ctx.fill(); ctx.stroke();
-    ctx.fillStyle="#d4a574"; ctx.fillRect(-8,3,16,5);
+    const tx=p.x+p.w/2-camX, ty=p.y+p.h-52+(isDreamActive()?-12-Math.sin(T*9)*4:0);
+    if(propSprites.tray){
+      drawSpriteFit(ctx, propSprites.tray, tx+Math.sin(T*7)*4, ty+8, 70, 38);
+    } else {
+      ctx.translate(tx, ty);
+      if(isDreamActive()) ctx.translate(Math.sin(T*7)*4, 0);
+      if(p.facing<0) ctx.scale(-1,1);
+      ctx.fillStyle="#e8e4dc"; ctx.strokeStyle=INK; ctx.lineWidth=2;
+      rrect(-16,-4,32,5,2); ctx.fill(); ctx.stroke();
+      ctx.fillStyle="#fff"; rrect(-12,1,24,14,2); ctx.fill(); ctx.stroke();
+      ctx.fillStyle="#d4a574"; ctx.fillRect(-8,3,16,5);
+    }
     ctx.restore();
   }
 }
@@ -1792,6 +1814,12 @@ function drawDreamTrayField(cx, cy){
   const pulse=(Math.sin(T*8)+1)/2;
   ctx.save();
   ctx.globalCompositeOperation="lighter";
+  if(effectSprites.parting){
+    drawSpriteFit(ctx, effectSprites.parting, cx, cy+6, 154+pulse*16, 92+pulse*8, 0.72);
+  }
+  if(effectSprites.trayGlow){
+    drawSpriteFit(ctx, effectSprites.trayGlow, cx, cy+32, 118+pulse*10, 58+pulse*6, 0.64);
+  }
   ctx.globalAlpha=0.28;
   const g=ctx.createRadialGradient(cx,cy,8,cx,cy,76+pulse*10);
   g.addColorStop(0,"rgba(232,184,74,.55)");
@@ -1920,6 +1948,8 @@ function drawParticles(){
 }
 
 function render(){
+  const auditCam=new URLSearchParams(location.search).get("cam");
+  if(auditCam!==null) camX=Math.max(0,Math.min(WORLD_W-VW,Number(auditCam)||0));
   ctx.save();
   if(shakeT>0){ shakeT-=0.016; ctx.translate((Math.random()-0.5)*6,(Math.random()-0.5)*6); }
   if(gameMode==="bonus"){
@@ -1962,6 +1992,8 @@ MTUI.init({
   homeUrl:"../index.html",
   defaultHint:"12:30 食堂高峰。梦里大家会自动让路。",
   startTitle:"食堂高峰",
+  startImage:"../assets/images/generated/level4-opening-banner.webp",
+  startImageAlt:"食堂高峰关卡插画",
   startBody:"想办法把盘子顺利回收。端盘不能跑、不能上平台，排队区墙边还藏着人事部。",
   startBtn:"去排队",
   ensureAudio,

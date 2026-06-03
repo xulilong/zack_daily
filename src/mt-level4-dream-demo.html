@@ -561,6 +561,7 @@ function drawBonusPickup(c){
     ctx.fillStyle="#fff"; ctx.font="800 12px PingFang SC,sans-serif"; ctx.textAlign="center";
     ctx.fillText("福",cx,cy+4); ctx.textAlign="left";
   } else {
+    if(drawSpriteFit(ctx, propSprites.coin, cx, cy, c.w-2, c.h-2, 0.94)) return;
     const r=Math.max(c.w,c.h)/2;
     ctx.fillStyle="#ffe08a"; ctx.strokeStyle=INK; ctx.lineWidth=2;
     ctx.beginPath(); ctx.arc(cx,cy,r,0,7); ctx.fill(); ctx.stroke();
@@ -1600,6 +1601,7 @@ function drawWorld(){
       drawHazard(e);
     } else if(e.type==="coin"){
       const cx=e.x+e.w/2, cy=e.y+e.h/2, r=8;
+      if(drawSpriteFit(ctx, propSprites.coin, cx, cy, e.w-3, e.h-3, 0.92)) continue;
       ctx.fillStyle="#ffe08a"; ctx.strokeStyle=INK; ctx.lineWidth=2;
       ctx.beginPath(); ctx.arc(cx,cy,r,0,7); ctx.fill(); ctx.stroke();
       ctx.fillStyle="rgba(255,255,255,.45)"; ctx.beginPath(); ctx.arc(cx-2,cy-2,2.5,0,7); ctx.fill();

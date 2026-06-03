@@ -29,6 +29,13 @@
   .stat.fx.smoke{background:#f0f0ee;border-color:#aaa;color:#555;}
   .stat.fx.tray{background:#fff8e6;border-color:#d4a060;color:#7a5820;}
   .stat.fx.bonus{background:#fff5e0;border-color:#e8b84a;color:#8a6020;}
+  .dream-stat{gap:8px;min-width:152px;padding-right:6px;}
+  .dream-meter{width:46px;height:6px;border:1px solid rgba(37,37,37,.28);border-radius:999px;overflow:hidden;background:#ece7de;}
+  .dream-fill{height:100%;width:0;background:#58a6b8;transition:width .12s linear;}
+  .dream-btn{width:28px;height:28px;border:1.5px solid var(--ink);border-radius:999px;background:#fffdf9;
+    color:var(--ink);font-size:14px;font-weight:800;line-height:1;cursor:pointer;box-shadow:0 2px 0 var(--ink);}
+  .dream-btn:disabled{opacity:.48;cursor:not-allowed;box-shadow:none;transform:translateY(1px);}
+  .stat.fx.dream{background:#eef8ff;border-color:#7db7d6;color:#285f7b;}
   .stage{position:relative;width:100%;background:var(--sky);}
   canvas{display:block;width:100%;height:auto;vertical-align:top;}
   .game-footer{background:var(--paper);border-top:2px solid var(--ink);padding:12px 14px 10px;}
@@ -69,6 +76,10 @@
       <div class="stats">
         <div class="stat lives-stat" id="ui_lives"><span class="lbl">命</span><span class="hearts">♥♥♥</span></div>
         <div class="stat" id="ui_score"><span class="lbl">MT币</span>0</div>
+        <div class="stat dream-stat" id="ui_dream">
+          <span class="lbl" id="ui_dream_label">做梦</span><div class="dream-meter"><div class="dream-fill" id="ui_dream_fill"></div></div>
+          <button type="button" class="dream-btn" id="btn_dream" aria-label="开启做梦模式">梦</button>
+        </div>
         <div class="stat fx" id="ui_power_icon" style="display:none"></div>
       </div>
     </div>
@@ -89,7 +100,7 @@
         <div class="key jump" data-k="jump">▲</div>
       </div>
     </div>
-    <div class="help">方向 · 空格跳 · Shift 快跑 · ↓ 蹲 · 窗口等餐 · 端盘不能跑 · 避开餐车蒸汽 · 回收处交盘</div>
+    <div class="help">方向 · 空格跳 · Shift 快跑 · ↓ 蹲 · 梦=短暂超能力 · 按 E/点“梦”让食客让路并托起餐盘</div>
   </footer>
 </div>
 
@@ -234,6 +245,8 @@ const player={x:80,y:GROUND-60,w:40,h:60,vx:0,vy:0,onGround:false,facing:1,walkT
 const keys={left:false,right:false,down:false,run:false};
 let camX=0, T=0, lives=MAX_LIVES, score=0, won=false, dead=false, shakeT=0;
 let fx={boost:0,crash:0,slip:0,slipDir:1,dry:0,smoke:0,tray:0};
+const DREAM_DURATION=6, DREAM_COOLDOWN=10;
+let dream={active:0,cooldown:0};
 let particles=[], splashT=0;
 let passThroughPlat=null, passThroughT=0;
 let coyoteT=0;
@@ -259,7 +272,7 @@ let stepTimer=0;
 function aabb(a,b){ return a.x<b.x+b.w && a.x+a.w>b.x && a.y<b.y+b.h && a.y+a.h>b.y; }
 function isFloatPlat(s){ return s.type==="platform"&&!s.ground; }
 function isUpperPlat(s){ return isFloatPlat(s)&&s.route==="upper"; }
-function trayBlocksUpper(){ return fx.tray>0&&!trayDelivered; }
+function trayBlocksUpper(){ return fx.tray>0&&!trayDelivered&&!isDreamActive(); }
 function platBlocksX(pb,s){
   if(trayBlocksUpper()&&isUpperPlat(s)) return false;
   if(s===passThroughPlat&&passThroughT>0) return false;
@@ -361,6 +374,7 @@ function respawnPlayer(){
   player.onGround=true; player.standingOn=null;
   player.crouch=false;
   fx.crash=0; fx.slip=0; fx.smoke=0; fx.tray=0;
+  dream={active:0,cooldown:0};
   if(!trayDelivered){ trayStumbles=0; releaseTrayPickup(false); }
   invulnT=1.6;
   dead=false;
@@ -371,7 +385,7 @@ function resetGame(){
   player.x=80; player.y=GROUND-player.h; player.vx=0; player.vy=0;
   player.onGround=true; player.facing=1; player.crouch=false;
   lives=MAX_LIVES; score=window.MTProgress?MTProgress.getRunCoins():0; won=false; dead=false; shakeT=0; splashT=0;
-  fx={boost:0,crash:0,slip:0,slipDir:1,dry:0,smoke:0,tray:0}; T=0;
+  fx={boost:0,crash:0,slip:0,slipDir:1,dry:0,smoke:0,tray:0}; dream={active:0,cooldown:0}; T=0;
   passThroughPlat=null; passThroughT=0; coyoteT=0;
   checkpoint={x:80,y:GROUND-player.h,facing:1}; invulnT=0;
   trayStumbles=0; trayDelivered=false; prevSlip=0; prevCrash=0; rushPhaseNotified=-1;
@@ -606,6 +620,7 @@ function isFoodServed(){
 
 function getZoneHint(x){
   if(gameMode==="bonus") return `年终奖 ${Math.max(0,bonusTimeLeft).toFixed(0)}s · 本房已捡 ${bonusRoundScore} · 右侧出口可提前离开`;
+  if(isDreamActive()) return "开路梦开启中：食客纷纷让路，餐盘悬浮跟随。";
   const st=ents.find(e=>e.type==="secretTrigger");
   const rush=(T%9)<2.5;
   if(x<820){
@@ -629,13 +644,14 @@ function getHelpHint(){
   const x=player.x;
   const st=ents.find(e=>e.type==="secretTrigger");
   if(gameMode==="bonus") return "年终奖房间是限时奖励。先捡近处 MT币；不想冒险时一直往右走，可以提前从出口离开。";
+  if(isDreamActive()) return "你正在做开路梦。食客会往两边让路，餐盘悬浮跟随，梦里可以带盘跳上平台。";
   if(x<820){
     if(st&&!st.used&&x>560) return "墙边“人事部”是隐藏入口：在它旁边按住 ↓ 并停稳，就能进年终奖房间。";
     return "排队闸机前别跳，走到闸机前停稳等它打开，再往右进入食堂。";
   }
   if(x<1880){
     if(!isFoodServed()) return "站在取餐窗口前停稳，等餐放出来后再碰餐盘。没出餐时继续冲只会卡住。";
-    return "先拿餐盘。端盘后不能跑、不能跳上平台，走地面通道更稳。";
+    return "先拿餐盘。按 E 或点顶部“梦”会开启开路梦：食客让路，餐盘悬浮，梦里可以带盘跳上平台。";
   }
   if(x<5200){
     if(fx.tray<=0) return "目标是把餐盘正确回收，这边有一点难度：直接端着盘子是过不去的，需要先跳过去把插队的同事都消灭掉，再回头拿餐盘去回收。";
@@ -652,12 +668,16 @@ function getHelpHint(){
 function updateHud(){
   if(gameMode==="bonus"){ updateBonusHud(); return; }
   const pi=document.getElementById("ui_power_icon");
+  syncDreamHud();
   MTUI.updateLives(lives, MAX_LIVES, lives<prevLives);
   prevLives=lives;
   document.getElementById("ui_score").innerHTML='<span class="lbl">MT币</span>'+score;
   MTUI.updateProgress(player.x/Math.max(1,WORLD_W-200));
   MTUI.updateHint(getZoneHint(player.x));
-  if(fx.tray>0){
+  if(isDreamActive()){
+    pi.style.display="inline-flex"; pi.className="stat fx dream";
+    pi.innerHTML='<span class="lbl">让路</span>'+dream.active.toFixed(1)+'s';
+  } else if(fx.tray>0){
     pi.style.display="inline-flex"; pi.className="stat fx tray";
     pi.innerHTML='<span class="lbl">餐盘</span>'+fx.tray.toFixed(0)+'s';
   } else if(fx.boost>0){
@@ -676,6 +696,72 @@ function updateHud(){
     pi.style.display="inline-flex"; pi.className="stat fx smoke";
     pi.innerHTML='<span class="lbl">呛</span>'+fx.smoke.toFixed(1)+'s';
   } else pi.style.display="none";
+}
+
+function isDreamActive(){ return dream.active>0; }
+function canStartDream(){ return MTUI.isActive()&&!won&&!dead&&gameMode==="main"&&dream.active<=0&&dream.cooldown<=0; }
+function syncDreamHud(){
+  const root=document.getElementById("ui_dream");
+  const fill=document.getElementById("ui_dream_fill");
+  const label=document.getElementById("ui_dream_label");
+  const btn=document.getElementById("btn_dream");
+  if(!root||!fill||!label||!btn) return;
+  let pct=1;
+  if(dream.active>0) pct=dream.active/DREAM_DURATION;
+  else if(dream.cooldown>0) pct=1-(dream.cooldown/DREAM_COOLDOWN);
+  fill.style.width=Math.max(0,Math.min(1,pct))*100+"%";
+  label.textContent=dream.active>0?"让路":(dream.cooldown>0?dream.cooldown.toFixed(0)+"s":"做梦");
+  const tip="梦是短暂超能力：按 E 或点这里开启开路梦，持续 6 秒；餐盘会飞到身边并悬浮，食客和经理会让路；梦醒后冷却 10 秒。";
+  const stateTip=dream.active>0?"开路梦开启中：食客让路，餐盘悬浮。":(dream.cooldown>0?`清醒冷却 ${dream.cooldown.toFixed(1)}s。${tip}`:tip);
+  root.title=stateTip;
+  label.title=stateTip;
+  btn.title=stateTip;
+  btn.setAttribute("aria-label", stateTip);
+  btn.disabled=!canStartDream();
+  root.classList.toggle("fx", dream.active>0);
+  root.classList.toggle("dream", dream.active>0);
+}
+function startDream(){
+  ensureAudio();
+  if(!canStartDream()) return;
+  summonDreamTray();
+  dream.active=DREAM_DURATION;
+  fx.smoke=0;
+  MTUI.toast("做梦模式：全员让路");
+  sfx.pickup();
+  updateHud();
+}
+function updateDream(dt){
+  if(dream.active>0){
+    dream.active=Math.max(0,dream.active-dt);
+    if(dream.active<=0){ dream.cooldown=DREAM_COOLDOWN; MTUI.toast("梦醒了，食堂恢复拥挤", 1200); }
+  } else if(dream.cooldown>0) dream.cooldown=Math.max(0,dream.cooldown-dt);
+}
+
+function summonDreamTray(){
+  if(trayDelivered||fx.tray>0) return true;
+  if(!isFoodServed()){
+    MTUI.toast("窗口还没出餐，稍后再召唤餐盘");
+    return false;
+  }
+  const t=ents.find(e=>e.type==="tray");
+  if(t) t.hidden=true;
+  fx.tray=TRAY_TIME;
+  spawnDust(player.x+player.w/2, player.y+player.h*0.45, 14);
+  return true;
+}
+
+function updateDreamCrowdYield(en, dt){
+  const pc=player.x+player.w/2;
+  const ec=en.x+en.w/2;
+  const left=en.patrol[0];
+  const right=en.patrol[1]-en.w;
+  const target=ec<pc ? left : right;
+  const speed=(en.fast?620:520)*dt;
+  if(Math.abs(en.x-target)<=speed) en.x=target;
+  else en.x+=Math.sign(target-en.x)*speed;
+  en.vx=Math.sign(target-en.x||en.vx||1)*Math.abs(en.vx||60);
+  en.dreamYield=0.35;
 }
 
 function doJump(){
@@ -722,6 +808,7 @@ function pickTray(e){
 
 function dropTray(stumble){
   if(fx.tray<=0) return;
+  if(isDreamActive()&&stumble){ MTUI.toast("大家让开了，餐盘没掉"); return; }
   fx.tray=0;
   updateHud();
   if(trayDelivered) return;
@@ -733,7 +820,7 @@ function dropTray(stumble){
     if(trayStumbles===1) MTUI.toast("餐盘掉了！捡起来，再摔一次就完了");
     else if(trayStumbles>=2){ MTUI.toast("全洒了…"); die(); }
   } else {
-    releaseTrayPickup(false);
+    releaseTrayPickup(true);
   }
 }
 
@@ -817,27 +904,28 @@ function update(dt){
   if(fx.slip>0) fx.slip-=dt;
   if(fx.dry>0) fx.dry-=dt;
   if(fx.smoke>0) fx.smoke-=dt;
+  updateDream(dt);
   if(fx.tray>0){
     fx.tray-=dt;
-    if(inPuddle(playerBox())&&fx.dry<=0) fx.tray-=dt*1.6;
+    if(inPuddle(playerBox())&&fx.dry<=0&&!isDreamActive()) fx.tray-=dt*1.6;
     if(fx.tray<=0){
       fx.tray=0;
       if(!trayDelivered){
-        releaseTrayPickup(false);
-        MTUI.toast("餐凉了…回窗口重领");
+        releaseTrayPickup(true);
+        MTUI.toast("餐盘掉在旁边了，快捡回来");
       }
       updateHud();
     }
   }
-  if(fx.slip>0 && prevSlip<=0 && fx.tray>0) dropTray(true);
-  if(fx.crash>0 && prevCrash<=0 && fx.tray>0) dropTray(true);
+  if(fx.slip>0 && prevSlip<=0 && fx.tray>0 && !isDreamActive()) dropTray(true);
+  if(fx.crash>0 && prevCrash<=0 && fx.tray>0 && !isDreamActive()) dropTray(true);
   prevSlip=fx.slip; prevCrash=fx.crash;
   if(invulnT>0) invulnT-=dt;
   if(passThroughT>0) passThroughT-=dt;
 
   ents.forEach(e=>{ if(e.type==="mover"){
     if(e.baseX===undefined){ e.baseX=e.x; e.prevOff=0; }
-    const off=Math.sin(T*e.speed)*e.range, d=off-e.prevOff;
+    const off=Math.sin(T*e.speed*(isDreamActive()?0.45:1))*e.range, d=off-e.prevOff;
     e.x=e.baseX+off;
     if(player.standingOn===e) player.x+=d;
     e.prevOff=off;
@@ -850,6 +938,10 @@ function update(dt){
   }});
 
   ents.forEach(en=>{ if(en.type==="enemy"&&!en.dead){
+    if(isDreamActive()){
+      updateDreamCrowdYield(en, dt);
+      return;
+    }
     const lunchRush=(T%9)<2.5;
     let spd=en.fast?1.35:1;
     if(lunchRush&&en.x>1880&&en.x<5200) spd*=1.28;
@@ -868,7 +960,7 @@ function update(dt){
   for(const h of ents){
     if(h.type!=="hazard"||h.hidden) continue;
     const c=h.cycle||4, o=h.activeT||1.5;
-    h.active=((T+(h.phase||0))%c)<o;
+    h.active=((T*(isDreamActive()?0.35:1)+(h.phase||0))%c)<o;
   }
 
   player.crouch=keys.down && player.onGround && !fx.crash && fx.slip<=0;
@@ -962,6 +1054,7 @@ function update(dt){
 
   // 敌人
   for(const en of ents){ if(en.type==="enemy"&&!en.dead&&aabb(pb,en)){
+    if(isDreamActive()) continue;
     if(invulnT>0) continue;
     if(canStompEnemy(pb,en,player.vy,prevFeetStomp)){
       en.dead=true; player.vy=-420; sfx.stomp(); score+=50;
@@ -976,6 +1069,7 @@ function update(dt){
     if(h.type!=="hazard"||!h.active) continue;
     if(!aabb(pb,h)) continue;
     if(h.kind==="steam"){
+      if(isDreamActive()) continue;
       fx.smoke=Math.min(2.4,fx.smoke+dt*2.4);
       if(player.onGround) player.vx*=0.82;
       if(fx.tray>0) fx.tray-=dt*0.9;
@@ -984,7 +1078,7 @@ function update(dt){
       if(fx.crash<=0&&fx.slip<=0&&player.onGround) player.vx*=0.86;
     }
   }
-  if(invulnT<=0){
+  if(invulnT<=0&&!isDreamActive()){
     for(const e of ents){ if(e.type==="spike"&&aabb(pb,e)) die(); }
   }
   if(player.y>VH+60) die();
@@ -1003,7 +1097,7 @@ function update(dt){
     const bar={x:ts.x,y:ts.y+8,w:ts.w,h:ts.h-8};
     if(!aabb(pb,bar)) continue;
     if(fx.crash>0){ stopCrash(); player.vx=-player.facing*RUN*0.85; sfx.bump(); break; }
-    if(fx.tray>0 && Math.abs(player.vx)>280){ dropTray(true); player.vx=-player.facing*RUN*0.7; sfx.bump(); break; }
+    if(fx.tray>0 && Math.abs(player.vx)>280 && !isDreamActive()){ dropTray(true); player.vx=-player.facing*RUN*0.7; sfx.bump(); break; }
     player.vx=0;
     if(player.facing>0) player.x=ts.x-pb.w+(player.x-pb.x);
     else player.x=ts.x+ts.w+(player.x-pb.x);
@@ -1017,7 +1111,7 @@ function update(dt){
     if(!aabb(pb,bar)) continue;
     if(player.crouch) continue;
     if(fx.crash>0){ stopCrash(); break; }
-    if(fx.tray>0 && Math.abs(player.vx)>220){ dropTray(true); player.vx=-player.facing*MOVE*0.6; sfx.bump(); break; }
+    if(fx.tray>0 && Math.abs(player.vx)>220 && !isDreamActive()){ dropTray(true); player.vx=-player.facing*MOVE*0.6; sfx.bump(); break; }
     player.vx=0;
     if(player.facing>0) player.x=g.x-pb.w+(player.x-pb.x);
     else player.x=g.x+g.w+(player.x-pb.x);
@@ -1073,7 +1167,7 @@ function moveX(dx){
     if(blocked || beforeClamp!==player.x || (want>0.5 && moved<want*0.35)) stopCrash();
   }
   if(fx.slip>0 && blocked){ fx.slip=0; player.vx=0; sfx.bump(); updateHud(); }
-  if(fx.tray>0 && blocked && Math.abs(player.vx)>280){ dropTray(true); player.vx=0; sfx.bump(); updateHud(); }
+  if(fx.tray>0 && blocked && Math.abs(player.vx)>280 && !isDreamActive()){ dropTray(true); player.vx=0; sfx.bump(); updateHud(); }
 }
 
 function moveY(dy){
@@ -1578,6 +1672,28 @@ function drawEnemy(e){
   const spr=enemySprites.walk;
   const cx=e.x+e.w/2, foot=e.y+e.h;
   const bob=Math.sin(T*10+e.x*0.02)*1.5;
+  if(isDreamActive()){
+    ctx.save();
+    ctx.globalAlpha=0.92;
+    ctx.fillStyle="#fffdf9";
+    ctx.strokeStyle=INK;
+    ctx.lineWidth=2;
+    rrect(cx-14, e.y-28, 28, 20, 6);
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle=INK;
+    ctx.font="800 12px PingFang SC,sans-serif";
+    ctx.textAlign="center";
+    ctx.fillText("让", cx, e.y-14);
+    ctx.textAlign="left";
+    ctx.strokeStyle="#58a6b8";
+    ctx.lineWidth=2;
+    const dir=(e.x+e.w/2)<(player.x+player.w/2)?-1:1;
+    for(let i=0;i<3;i++){
+      const y=e.y+12+i*11;
+      rline(cx-dir*(20+i*6), y, cx-dir*(36+i*8), y-3);
+    }
+    ctx.restore();
+  }
   if(spr){
     ctx.save();
     ctx.translate(cx,foot+bob);
@@ -1600,6 +1716,7 @@ loadSprite(IMG+"hero_run.png","run");
 function drawPlayer(){
   const p=player; const cx=p.x+p.w/2-camX, footY=p.y+p.h;
   const air=!p.onGround, moving=keys.left||keys.right||Math.abs(p.vx)>30;
+  if(isDreamActive()) drawDreamTrayField(cx, footY-44);
   // 挤压拉伸形变（以脚底为锚点）
   let sx=1, sy=1;
   if(p.squashT>0){ const k=p.squashT/0.18; sy=1-0.30*k; sx=1+0.30*k; }
@@ -1629,6 +1746,7 @@ function drawPlayer(){
   if(fx.tray>0){
     ctx.save();
     ctx.translate(p.x+p.w/2-camX, p.y+p.h-52);
+    if(isDreamActive()) ctx.translate(Math.sin(T*7)*4, -12-Math.sin(T*9)*4);
     if(p.facing<0) ctx.scale(-1,1);
     ctx.fillStyle="#e8e4dc"; ctx.strokeStyle=INK; ctx.lineWidth=2;
     rrect(-16,-4,32,5,2); ctx.fill(); ctx.stroke();
@@ -1636,6 +1754,45 @@ function drawPlayer(){
     ctx.fillStyle="#d4a574"; ctx.fillRect(-8,3,16,5);
     ctx.restore();
   }
+}
+
+function drawDreamTrayField(cx, cy){
+  const pulse=(Math.sin(T*8)+1)/2;
+  ctx.save();
+  ctx.globalCompositeOperation="lighter";
+  ctx.globalAlpha=0.28;
+  const g=ctx.createRadialGradient(cx,cy,8,cx,cy,76+pulse*10);
+  g.addColorStop(0,"rgba(232,184,74,.55)");
+  g.addColorStop(0.45,"rgba(126,183,214,.28)");
+  g.addColorStop(1,"rgba(126,183,214,0)");
+  ctx.fillStyle=g;
+  ctx.beginPath(); ctx.arc(cx,cy,76+pulse*10,0,7); ctx.fill();
+  ctx.globalCompositeOperation="source-over";
+  ctx.globalAlpha=0.8;
+  ctx.strokeStyle="#58a6b8";
+  ctx.lineWidth=2.5;
+  ctx.setLineDash([6,7]);
+  ctx.beginPath(); ctx.ellipse(cx,cy+16,48+pulse*8,18+pulse*3,0,0,7); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.strokeStyle="#e8b84a";
+  ctx.lineWidth=2;
+  for(let i=0;i<4;i++){
+    const x=cx-30+i*20+Math.sin(T*5+i)*4;
+    ctx.beginPath();
+    ctx.moveTo(x,cy+22);
+    ctx.quadraticCurveTo(x+8,cy+8,x+16,cy-10);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawDreamOverlay(){
+  if(!isDreamActive()) return;
+  ctx.save();
+  ctx.globalAlpha=0.055+Math.sin(T*6)*0.012;
+  ctx.fillStyle="#e8b84a";
+  ctx.fillRect(0,0,VW,VH);
+  ctx.restore();
 }
 
 function drawGuyVector(p){
@@ -1739,6 +1896,7 @@ function render(){
     drawPlayer();
   } else {
     drawBackground(); drawWorld(); drawParticles(); drawPlayer(); drawFog();
+    drawDreamOverlay();
   }
   ctx.restore();
 }
@@ -1754,14 +1912,25 @@ function loop(t){
 
 /* ===== 输入 & UI ===== */
 MTUI.bindKeys(keys, doJump, ensureAudio);
+function bindDreamControls(){
+  const btn=document.getElementById("btn_dream");
+  if(btn) btn.addEventListener("click", startDream);
+  addEventListener("keydown", e=>{
+    if(e.code==="KeyE"&&!e.repeat){
+      e.preventDefault();
+      startDream();
+    }
+  });
+}
+bindDreamControls();
 MTUI.init({
   levelId: 4,
   guardLevel: 4,
   levelTag:"关卡4",
   homeUrl:"../index.html",
-  defaultHint:"12:30 食堂高峰",
+  defaultHint:"12:30 食堂高峰。梦里大家会自动让路。",
   startTitle:"食堂高峰",
-  startBody:"想办法把盘子顺利回收。<br>端盘不能跑、不能上平台 · 排队区墙边藏着人事部，里面可能有惊喜",
+  startBody:"想办法把盘子顺利回收。端盘不能跑、不能上平台，排队区墙边还藏着人事部。",
   startBtn:"去排队",
   ensureAudio,
   toggleSound(){ soundOn=!soundOn; if(window.MTBGM) MTBGM.setSoundOn(soundOn); return soundOn; },

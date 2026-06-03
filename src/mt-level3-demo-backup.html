@@ -48,14 +48,6 @@
     50%{transform:translateY(1px);box-shadow:0 0 0 6px rgba(126,200,122,.32),0 2px 0 var(--ink);}
   }
   .stat.fx.spit{background:#eef9f0;border-color:#7ec87a;color:#2d6640;}
-  .dream-stat{gap:8px;min-width:152px;padding-right:6px;}
-  .dream-meter{width:58px;height:8px;border:1.5px solid rgba(37,37,37,.28);border-radius:999px;background:rgba(37,37,37,.08);overflow:hidden;}
-  .dream-fill{height:100%;width:100%;background:linear-gradient(90deg,#7db7d6,#e8b84a);transition:width .18s ease;}
-  .dream-btn{width:30px;height:26px;border:1.8px solid var(--ink);border-radius:8px;background:var(--paper);font:inherit;font-size:12px;font-weight:900;cursor:pointer;box-shadow:0 2px 0 var(--ink);}
-  .dream-btn.ready{background:#252525;color:#fffdf9;}
-  .dream-btn.active{background:#7db7d6;color:#fffdf9;}
-  .dream-btn:disabled{opacity:.45;cursor:not-allowed;box-shadow:none;}
-  .stat.fx.dream{background:#eef8ff;border-color:#7db7d6;color:#285f7b;}
   .spit-unlock{
     position:absolute;left:50%;top:46%;transform:translate(-50%,-50%) scale(.94);
     z-index:12;pointer-events:none;text-align:center;min-width:min(88vw,300px);
@@ -97,11 +89,6 @@
       <div class="stats">
         <div class="stat lives-stat" id="ui_lives"><span class="lbl">命</span><span class="hearts">♥♥♥</span></div>
         <div class="stat" id="ui_score"><span class="lbl">MT币</span>0</div>
-        <div class="stat dream-stat" id="ui_dream">
-          <span class="lbl">梦</span>
-          <span class="dream-meter"><span class="dream-fill" id="ui_dream_fill"></span></span>
-          <button type="button" class="dream-btn" id="btn_dream" aria-label="开启做梦模式">梦</button>
-        </div>
         <div class="stat fx" id="ui_power_icon" style="display:none"></div>
       </div>
     </div>
@@ -127,7 +114,7 @@
         <div class="key jump" data-k="jump">▲</div>
       </div>
     </div>
-    <div class="help">方向 · 空格跳 · Shift 跑 · X 吐口水 · 梦=短暂超能力 · 按 E/点“梦”让全员定格</div>
+    <div class="help">方向 · 空格跳 · Shift 跑 · 先拿润喉糖 · X 吐口水 · ↓ 蹲 · 躲锅和文件夹 · 别踩便签</div>
   </footer>
 </div>
 
@@ -292,8 +279,6 @@ const player={x:80,y:GROUND-60,w:40,h:60,vx:0,vy:0,onGround:false,facing:1,walkT
 const keys={left:false,right:false,down:false,run:false,attack:false};
 let camX=0, T=0, lives=MAX_LIVES, score=0, won=false, dead=false, shakeT=0;
 let fx={boost:0,crash:0,slip:0,slipDir:1,dry:0,smoke:0};
-const DREAM_DURATION=6, DREAM_COOLDOWN=10;
-let dream={active:0,cooldown:0};
 let particles=[], spits=[], props=[], splashT=0, spitCd=0;
 let passThroughPlat=null, passThroughT=0;
 let coyoteT=0;
@@ -426,7 +411,6 @@ function resetGame(){
   player.onGround=true; player.facing=1; player.crouch=false;
   lives=MAX_LIVES; score=window.MTProgress?MTProgress.getRunCoins():0; won=false; dead=false; shakeT=0; splashT=0;
   fx={boost:0,crash:0,slip:0,slipDir:1,dry:0,smoke:0}; T=0; spits=[]; props=[]; spitCd=0;
-  dream={active:0,cooldown:0};
   passThroughPlat=null; passThroughT=0; coyoteT=0;
   checkpoint={x:80,y:GROUND-player.h,facing:1}; invulnT=0; hasBadge=false; canSpit=false;
   ents.forEach(e=>{
@@ -475,7 +459,6 @@ function pulseAttackKey(){
 }
 
 function getZoneHint(x){
-  if(isDreamActive()) return "静音领域开启中：所有插话同事都定格了，话筒蓄力更快。";
   if(x<700) return canSpit ? "X 吐口水清插话；话筒前停稳翻页。" : "秘书准备了润喉糖；跳上去拿，才能吐口水。";
   if(x<1220) return "第一页翻好路才接上；当心甩过来的锅。";
   if(x<1680) return "会议桌会动；隔断要跳桌面；别踩黄色便签。";
@@ -492,9 +475,8 @@ function getHelpHint(){
   const x=player.x;
   const mic=activeMic();
   const chair=ents.find(e=>e.type==="box"&&e.label==="椅子");
-  if(isDreamActive()) return "你正在做静音梦。插话同事和飞来的锅都会定格，趁现在去话筒前停稳讲完。";
   if(x<700){
-    if(!canSpit) return "梦是短暂超能力。按 E 或点顶部“梦”可以让同事定格；先拿润喉糖，之后 X / J / F 可以清掉插话同事。";
+    if(!canSpit) return "先拿润喉糖。跳到秘书旁边的高处吃到糖，之后 X / J / F 可以吐口水清掉插话同事。";
     if(mic) return "站在话筒范围内别乱动，或按住 ↓ 蹲下，等话筒进度满了就会翻页接路。";
     return "已经能吐口水了。遇到插话同事，面向他按 X，清掉后再去话筒前停稳。";
   }
@@ -556,14 +538,10 @@ function updateHud(){
   document.getElementById("ui_score").innerHTML='<span class="lbl">MT币</span>'+score;
   MTUI.updateProgress(player.x/Math.max(1,WORLD_W-200));
   MTUI.updateHint(getZoneHint(player.x));
-  syncDreamHud();
   const atkKey=document.querySelector('.key[data-k="attack"]');
   if(atkKey) atkKey.classList.toggle("off", !canSpit);
   const mic=activeMic();
-  if(isDreamActive()){
-    pi.style.display="inline-flex"; pi.className="stat fx dream";
-    pi.innerHTML='<span class="lbl">静音</span>'+dream.active.toFixed(1)+'s';
-  } else if(mic){
+  if(mic){
     const need=mic.need||0.82;
     const pct=Math.min(100,Math.round((mic.charge||0)/need*100));
     pi.style.display="inline-flex"; pi.className="stat fx boost";
@@ -587,44 +565,6 @@ function updateHud(){
     pi.style.display="inline-flex"; pi.className="stat fx spit";
     pi.innerHTML='<span class="lbl">口水</span>可用';
   } else pi.style.display="none";
-}
-
-function isDreamActive(){ return dream.active>0; }
-function canStartDream(){ return dream.active<=0 && dream.cooldown<=0; }
-function syncDreamHud(){
-  const fill=document.getElementById("ui_dream_fill");
-  const btn=document.getElementById("btn_dream");
-  if(fill){
-    let pct=100;
-    if(dream.active>0) pct=(dream.active/DREAM_DURATION)*100;
-    else if(dream.cooldown>0) pct=(1-dream.cooldown/DREAM_COOLDOWN)*100;
-    fill.style.width=Math.max(0,Math.min(100,pct)).toFixed(0)+"%";
-  }
-  if(btn){
-    const tip="梦是短暂超能力：按 E 或点这里开启静音领域，持续 6 秒；插话同事和飞来的锅都会定格，话筒蓄力更快；梦醒后冷却 10 秒。";
-    btn.disabled=!canStartDream();
-    btn.classList.toggle("ready", canStartDream());
-    btn.classList.toggle("active", isDreamActive());
-    btn.textContent=isDreamActive()?Math.ceil(dream.active):(dream.cooldown>0?Math.ceil(dream.cooldown):"梦");
-    btn.title=isDreamActive() ? "静音领域开启中：全员定格。" : (dream.cooldown>0 ? `清醒冷却 ${dream.cooldown.toFixed(1)}s。${tip}` : tip);
-    btn.setAttribute("aria-label", btn.title);
-    const root=document.getElementById("ui_dream");
-    if(root) root.title=tip;
-  }
-}
-function startDream(){
-  if(!MTUI.isActive()||won||dead||!canStartDream()) return;
-  dream.active=DREAM_DURATION;
-  sfx.pickup();
-  MTUI.toast("做梦模式：全员定格！", 1500);
-  if(window.MTUI) MTUI.track("dream_mode_start", { dream:"meeting_silence" });
-  updateHud();
-}
-function updateDream(dt){
-  if(dream.active>0){
-    dream.active=Math.max(0,dream.active-dt);
-    if(dream.active<=0){ dream.cooldown=DREAM_COOLDOWN; MTUI.toast("梦醒了，会议继续吵", 1200); }
-  } else if(dream.cooldown>0) dream.cooldown=Math.max(0,dream.cooldown-dt);
 }
 
 function doJump(){
@@ -667,7 +607,7 @@ function doSpit(){
   const speak=isSpeaking();
   spawnSpit(0, speak, 0);
   if(speak) spawnSpit(4, speak, 0.15);
-  spitCd=(speak?0.34:0.48)*(isDreamActive()?1.45:1);
+  spitCd=speak?0.34:0.48;
   sfx.spit();
   player.squashT=0.1;
   spawnDust(player.x+player.w/2+(player.facing||1)*10, player.y+player.h*0.4, speak?3:2);
@@ -721,19 +661,18 @@ function tryEnemyThrow(en){
 
 function updateProps(dt){
   const pb=playerBox();
-  const pdt=isDreamActive()?0:dt;
   for(const p of props){
     p.life+=dt;
-    p.vy+=GRAV*pdt;
-    p.x+=p.vx*pdt;
-    p.y+=p.vy*pdt;
-    p.rot=(p.rot||0)+(p.spin||0)*pdt;
+    p.vy+=GRAV*dt;
+    p.x+=p.vx*dt;
+    p.y+=p.vy*dt;
+    p.rot=(p.rot||0)+(p.spin||0)*dt;
     if(p.y+p.h>=GROUND-2&&p.vy>0){
       p.y=GROUND-p.h;
       if(p.vy>180){ p.vy=-p.vy*0.32; p.vx*=0.72; sfx.clang(); }
       else{ p.vy=0; p.vx*=0.82; if(p.life>0.35) p.life=p.max-0.05; }
     }
-    if(invulnT<=0&&!isDreamActive()&&aabb(pb,p)){
+    if(invulnT<=0&&aabb(pb,p)){
       die();
       p.life=p.max;
     }
@@ -870,7 +809,6 @@ function update(dt){
   if(fx.smoke>0) fx.smoke-=dt;
   if(invulnT>0) invulnT-=dt;
   if(passThroughT>0) passThroughT-=dt;
-  updateDream(dt);
 
   ents.forEach(e=>{ if(e.type==="mover"){
     if(e.baseX===undefined){ e.baseX=e.x; e.prevOff=0; }
@@ -902,7 +840,6 @@ function update(dt){
   }});
 
   ents.forEach(en=>{ if(en.type==="enemy"&&!en.dead){
-    if(isDreamActive()) return;
     const spd=en.fast?1.35:1;
     en.x+=en.vx*spd*dt;
     if(en.x<=en.patrol[0]){ en.x=en.patrol[0]; en.vx=Math.abs(en.vx); }
@@ -920,7 +857,6 @@ function update(dt){
       if(ts.type!=="mic"||ts.open) continue;
       if(!aabb(en,micCore(ts))) continue;
       const before=ts.charge||0;
-      if(isDreamActive()) continue;
       ts.charge=Math.max(0,before-dt*2.2);
       if(before>0.12&&ts.charge<0.05) MTUI.toast("有人插话！");
     }
@@ -1000,10 +936,10 @@ function update(dt){
   for(const h of ents){
     if(h.type!=="hazard"||!h.active) continue;
     if(h.kind==="beam"){
-      if(invulnT<=0&&!isDreamActive()&&aabb(pb,h)&&!player.crouch) die();
+      if(invulnT<=0&&aabb(pb,h)&&!player.crouch) die();
       continue;
     }
-    if(aabb(pb,h)&&!isDreamActive()){
+    if(aabb(pb,h)){
       fx.smoke=Math.min(2.8,fx.smoke+dt*2.2);
       if(fx.crash<=0&&fx.slip<=0&&player.onGround) player.vx*=0.86;
     }
@@ -1030,7 +966,7 @@ function update(dt){
     const still=!ts.crouchOnly&&Math.abs(player.vx)<36&&player.onGround&&!keys.left&&!keys.right;
     const prevCh=ts.charge||0;
     const charging=(player.crouch&&player.onGround)||still;
-    if(charging) ts.charge=Math.min(1,(ts.charge||0)+dt*(player.crouch?2.8:2.0)*(isDreamActive()?1.7:1));
+    if(charging) ts.charge=Math.min(1,(ts.charge||0)+dt*(player.crouch?2.8:2.0));
     else ts.charge=Math.max(0,(ts.charge||0)-dt*(ts.crouchOnly?2.8:2.2));
     if(charging&&micAnchored()) player.vx=0;
     if(prevCh<0.08&&(ts.charge||0)>=0.08&&ts.type==="mic")
@@ -1672,7 +1608,6 @@ loadSprite(IMG+"hero_run.png","run");
 function drawPlayer(){
   const p=player; const cx=p.x+p.w/2-camX, footY=p.y+p.h;
   const air=!p.onGround, moving=keys.left||keys.right||Math.abs(p.vx)>30;
-  if(isDreamActive()) drawSilenceField(cx, footY-38);
   // 挤压拉伸形变（以脚底为锚点）
   let sx=1, sy=1;
   if(p.squashT>0){ const k=p.squashT/0.18; sy=1-0.30*k; sx=1+0.30*k; }
@@ -1698,51 +1633,6 @@ function drawPlayer(){
   } else {
     drawGuyVector(p);   // 没有贴图时回退到矢量绘制
   }
-  ctx.restore();
-}
-
-function drawSilenceField(cx, cy){
-  const pulse=(Math.sin(T*7)+1)/2;
-  ctx.save();
-  ctx.globalAlpha=0.26;
-  ctx.strokeStyle="#58a6b8";
-  ctx.lineWidth=2.5;
-  for(let i=0;i<3;i++){
-    const r=34+i*18+pulse*8;
-    ctx.beginPath();
-    ctx.ellipse(cx,cy,r,r*0.58,0,0,7);
-    ctx.stroke();
-  }
-  ctx.globalAlpha=0.9;
-  ctx.fillStyle="#fffdf9";
-  ctx.strokeStyle=INK;
-  ctx.lineWidth=2;
-  rrect(cx-24,cy-70,48,20,6);
-  ctx.fill(); ctx.stroke();
-  ctx.fillStyle=INK;
-  ctx.font="800 12px PingFang SC,sans-serif";
-  ctx.textAlign="center";
-  ctx.fillText("静音",cx,cy-56);
-  ctx.textAlign="left";
-  ctx.strokeStyle="#e8b84a";
-  ctx.lineWidth=2;
-  ctx.beginPath();
-  ctx.moveTo(cx-38,cy-36); ctx.lineTo(cx-26,cy-24);
-  ctx.moveTo(cx+38,cy-36); ctx.lineTo(cx+26,cy-24);
-  ctx.stroke();
-  ctx.restore();
-}
-
-function drawDreamOverlay(){
-  if(!isDreamActive()) return;
-  ctx.save();
-  ctx.globalAlpha=0.08+Math.sin(T*6)*0.012;
-  ctx.fillStyle="#7db7d6";
-  ctx.fillRect(0,0,VW,VH);
-  ctx.globalAlpha=0.18;
-  ctx.strokeStyle="#fffdf9";
-  ctx.lineWidth=1.5;
-  for(let y=44+(T*18%36);y<VH;y+=36) rline(0,y,VW,y);
   ctx.restore();
 }
 
@@ -1899,7 +1789,6 @@ function render(){
   ctx.save();
   if(shakeT>0){ shakeT-=0.016; ctx.translate((Math.random()-0.5)*6,(Math.random()-0.5)*6); }
   drawBackground(); drawWorld(); drawProps(); drawSpits(); drawParticles(); drawPlayer(); drawFog();
-  drawDreamOverlay();
   ctx.restore();
 }
 
@@ -1914,25 +1803,14 @@ function loop(t){
 
 /* ===== 输入 & UI ===== */
 MTUI.bindKeys(keys, doJump, ensureAudio, doSpit);
-function bindDreamControls(){
-  const btn=document.getElementById("btn_dream");
-  if(btn) btn.addEventListener("click", startDream);
-  addEventListener("keydown", e=>{
-    if(e.code==="KeyE"&&!e.repeat){
-      e.preventDefault();
-      startDream();
-    }
-  });
-}
-bindDreamControls();
 MTUI.init({
   levelId: 3,
   guardLevel: 3,
   levelTag:"关卡3",
   homeUrl:"../index.html",
-  defaultHint:"秘书：先拿润喉糖。梦里可以让会议静音。",
+  defaultHint:"秘书：先拿润喉糖，再清插话。",
   startTitle:"会议室",
-  startBody:"先拿润喉糖，清掉插话同事，在话筒前停稳讲完每一页。",
+  startBody:"总有些喜欢插话和甩锅的同事",
   startBtn:"进去讲",
   ensureAudio,
   toggleSound(){ soundOn=!soundOn; if(window.MTBGM) MTBGM.setSoundOn(soundOn); return soundOn; },

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>MT大冒险 · 关卡3 会议室</title>
+<title>MT大冒险 · 关卡3 会议室（梦境试验）</title>
 <style>
   :root{
     --ink:#252525;--paper:#faf8f4;--paper2:#ece7de;--cream:#fffdf9;
@@ -83,7 +83,7 @@
     <div class="head-main">
       <button type="button" class="tb" id="btn_home" aria-label="返回首页">⌂</button>
       <div class="head-title">
-        <div class="title" id="ui_chapter_title">关卡3 · 会议室</div>
+        <div class="title" id="ui_chapter_title">关卡3 · 会议室（梦境试验）</div>
         <div class="hint" id="ui_hint_text">秘书：PPT 还没翻，路不通。</div>
       </div>
       <div class="head-tools">
@@ -127,7 +127,7 @@
         <div class="key jump" data-k="jump">▲</div>
       </div>
     </div>
-    <div class="help">方向 · 空格跳 · Shift 跑 · X 吐口水 · 梦=短暂超能力 · 按 E/点“梦”让全员定格</div>
+    <div class="help">方向 · 空格跳 · Shift 跑 · X 吐口水 · E/梦 静音领域 · 冷却10秒</div>
   </footer>
 </div>
 
@@ -492,9 +492,8 @@ function getHelpHint(){
   const x=player.x;
   const mic=activeMic();
   const chair=ents.find(e=>e.type==="box"&&e.label==="椅子");
-  if(isDreamActive()) return "你正在做静音梦。插话同事和飞来的锅都会定格，趁现在去话筒前停稳讲完。";
   if(x<700){
-    if(!canSpit) return "梦是短暂超能力。按 E 或点顶部“梦”可以让同事定格；先拿润喉糖，之后 X / J / F 可以清掉插话同事。";
+    if(!canSpit) return "先拿润喉糖。跳到秘书旁边的高处吃到糖，之后 X / J / F 可以吐口水清掉插话同事。";
     if(mic) return "站在话筒范围内别乱动，或按住 ↓ 蹲下，等话筒进度满了就会翻页接路。";
     return "已经能吐口水了。遇到插话同事，面向他按 X，清掉后再去话筒前停稳。";
   }
@@ -601,15 +600,10 @@ function syncDreamHud(){
     fill.style.width=Math.max(0,Math.min(100,pct)).toFixed(0)+"%";
   }
   if(btn){
-    const tip="梦是短暂超能力：按 E 或点这里开启静音领域，持续 6 秒；插话同事和飞来的锅都会定格，话筒蓄力更快；梦醒后冷却 10 秒。";
     btn.disabled=!canStartDream();
     btn.classList.toggle("ready", canStartDream());
     btn.classList.toggle("active", isDreamActive());
     btn.textContent=isDreamActive()?Math.ceil(dream.active):(dream.cooldown>0?Math.ceil(dream.cooldown):"梦");
-    btn.title=isDreamActive() ? "静音领域开启中：全员定格。" : (dream.cooldown>0 ? `清醒冷却 ${dream.cooldown.toFixed(1)}s。${tip}` : tip);
-    btn.setAttribute("aria-label", btn.title);
-    const root=document.getElementById("ui_dream");
-    if(root) root.title=tip;
   }
 }
 function startDream(){
@@ -1927,12 +1921,11 @@ function bindDreamControls(){
 bindDreamControls();
 MTUI.init({
   levelId: 3,
-  guardLevel: 3,
-  levelTag:"关卡3",
+  levelTag:"关卡3 · 梦境试验",
   homeUrl:"../index.html",
   defaultHint:"秘书：先拿润喉糖。梦里可以让会议静音。",
-  startTitle:"会议室",
-  startBody:"先拿润喉糖，清掉插话同事，在话筒前停稳讲完每一页。",
+  startTitle:"会议室（梦境试验）",
+  startBody:"按 E / 点“梦”开启静音领域；插话同事和飞来的锅都会定格，话筒更快；用完冷却 10 秒。",
   startBtn:"进去讲",
   ensureAudio,
   toggleSound(){ soundOn=!soundOn; if(window.MTBGM) MTBGM.setSoundOn(soundOn); return soundOn; },

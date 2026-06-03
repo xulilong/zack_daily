@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>MT大冒险 · 关卡3 会议室</title>
+<title>MT大冒险 · 关卡5 CEO办公室 · 梦境试验</title>
 <style>
   :root{
     --ink:#252525;--paper:#faf8f4;--paper2:#ece7de;--cream:#fffdf9;
@@ -27,6 +27,14 @@
   .stat.fx.slip{background:#fffbe6;border-color:#d4c060;color:#7a6820;}
   .stat.fx.dry{background:#eef6ff;border-color:#7aabcc;color:#3a6080;}
   .stat.fx.smoke{background:#f0f0ee;border-color:#aaa;color:#555;}
+  .stat.fx.brief{background:#eef3ff;border-color:#7a9ccc;color:#3a5080;}
+  .dream-stat{gap:8px;min-width:152px;padding-right:6px;}
+  .dream-meter{width:46px;height:6px;border:1px solid rgba(37,37,37,.28);border-radius:999px;overflow:hidden;background:#ece7de;}
+  .dream-fill{height:100%;width:0;background:#58a6b8;transition:width .12s linear;}
+  .dream-btn{width:28px;height:28px;border:1.5px solid var(--ink);border-radius:999px;background:#fffdf9;
+    color:var(--ink);font-size:14px;font-weight:800;line-height:1;cursor:pointer;box-shadow:0 2px 0 var(--ink);}
+  .dream-btn:disabled{opacity:.48;cursor:not-allowed;box-shadow:none;transform:translateY(1px);}
+  .stat.fx.dream{background:#eef8ff;border-color:#7db7d6;color:#285f7b;}
   .stage{position:relative;width:100%;background:var(--sky);}
   canvas{display:block;width:100%;height:auto;vertical-align:top;}
   .game-footer{background:var(--paper);border-top:2px solid var(--ink);padding:12px 14px 10px;}
@@ -36,37 +44,7 @@
     color:var(--ink);font-size:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;
     box-shadow:0 3px 0 var(--ink);font-weight:700;transition:transform .05s,box-shadow .05s,background .12s;}
   .key.run{font-size:12px;letter-spacing:.08em;width:52px;}
-  .key.attack{font-size:14px;letter-spacing:.06em;width:52px;}
   .key.jump{font-size:20px;padding-bottom:3px;}
-  .key.off{opacity:.38;filter:grayscale(.45);}
-  .key.ready{
-    background:#eef9f0;border-color:#5a9a68;color:#2d6640;
-    animation:spitPulse 1.1s ease infinite;
-    box-shadow:0 0 0 2px rgba(126,200,122,.45),0 3px 0 var(--ink);
-  }
-  @keyframes spitPulse{
-    50%{transform:translateY(1px);box-shadow:0 0 0 6px rgba(126,200,122,.32),0 2px 0 var(--ink);}
-  }
-  .stat.fx.spit{background:#eef9f0;border-color:#7ec87a;color:#2d6640;}
-  .dream-stat{gap:8px;min-width:152px;padding-right:6px;}
-  .dream-meter{width:58px;height:8px;border:1.5px solid rgba(37,37,37,.28);border-radius:999px;background:rgba(37,37,37,.08);overflow:hidden;}
-  .dream-fill{height:100%;width:100%;background:linear-gradient(90deg,#7db7d6,#e8b84a);transition:width .18s ease;}
-  .dream-btn{width:30px;height:26px;border:1.8px solid var(--ink);border-radius:8px;background:var(--paper);font:inherit;font-size:12px;font-weight:900;cursor:pointer;box-shadow:0 2px 0 var(--ink);}
-  .dream-btn.ready{background:#252525;color:#fffdf9;}
-  .dream-btn.active{background:#7db7d6;color:#fffdf9;}
-  .dream-btn:disabled{opacity:.45;cursor:not-allowed;box-shadow:none;}
-  .stat.fx.dream{background:#eef8ff;border-color:#7db7d6;color:#285f7b;}
-  .spit-unlock{
-    position:absolute;left:50%;top:46%;transform:translate(-50%,-50%) scale(.94);
-    z-index:12;pointer-events:none;text-align:center;min-width:min(88vw,300px);
-    background:var(--cream);border:2px solid var(--ink);border-radius:var(--r);
-    padding:18px 26px 16px;box-shadow:0 5px 0 var(--ink),0 16px 40px rgba(37,37,37,.18);
-    opacity:0;transition:opacity .22s ease,transform .22s ease;
-  }
-  .spit-unlock.show{opacity:1;transform:translate(-50%,-50%) scale(1);}
-  .spit-unlock strong{display:block;font-size:18px;color:var(--ink);margin-bottom:8px;letter-spacing:.04em;}
-  .spit-unlock span{display:block;font-size:13px;color:var(--muted);line-height:1.55;}
-  .spit-unlock em{font-style:normal;color:var(--ink);font-weight:800;}
   .help{text-align:center;font-size:10px;color:var(--muted);line-height:1.5;letter-spacing:.02em;}
   .overlay{position:absolute;inset:0;background:rgba(37,37,37,.52);display:none;align-items:center;justify-content:center;z-index:20;}
   .overlay.show{display:flex;}
@@ -83,8 +61,8 @@
     <div class="head-main">
       <button type="button" class="tb" id="btn_home" aria-label="返回首页">⌂</button>
       <div class="head-title">
-        <div class="title" id="ui_chapter_title">关卡3 · 会议室</div>
-        <div class="hint" id="ui_hint_text">秘书：PPT 还没翻，路不通。</div>
+        <div class="title" id="ui_chapter_title">关卡5 · CEO办公室</div>
+        <div class="hint" id="ui_hint_text">CEO办公室，终于到了……</div>
       </div>
       <div class="head-tools">
         <button type="button" class="tb" id="btn_bgm" aria-label="背景音乐">🎵</button>
@@ -98,8 +76,7 @@
         <div class="stat lives-stat" id="ui_lives"><span class="lbl">命</span><span class="hearts">♥♥♥</span></div>
         <div class="stat" id="ui_score"><span class="lbl">MT币</span>0</div>
         <div class="stat dream-stat" id="ui_dream">
-          <span class="lbl">梦</span>
-          <span class="dream-meter"><span class="dream-fill" id="ui_dream_fill"></span></span>
+          <span class="lbl" id="ui_dream_label">做梦</span><div class="dream-meter"><div class="dream-fill" id="ui_dream_fill"></div></div>
           <button type="button" class="dream-btn" id="btn_dream" aria-label="开启做梦模式">梦</button>
         </div>
         <div class="stat fx" id="ui_power_icon" style="display:none"></div>
@@ -108,10 +85,6 @@
   </header>
   <div class="stage">
     <canvas id="cv" width="960" height="540"></canvas>
-    <div class="spit-unlock" id="spit_unlock_banner" aria-live="polite">
-      <strong>润喉糖生效 · 口水已解锁</strong>
-      <span>按 <em>X</em> 或点下方 <em>吐</em>，清掉插话同事</span>
-    </div>
     <div class="toast" id="ui_toast"></div>
     <div class="overlay" id="overlay"><div class="modal" id="modal"></div></div>
   </div>
@@ -123,11 +96,10 @@
       </div>
       <div class="group">
         <div class="key" data-k="down">▼</div>
-        <div class="key attack" data-k="attack">吐</div>
         <div class="key jump" data-k="jump">▲</div>
       </div>
     </div>
-    <div class="help">方向 · 空格跳 · Shift 跑 · X 吐口水 · 梦=短暂超能力 · 按 E/点“梦”让全员定格</div>
+    <div class="help">方向 · 空格跳 · Shift 快跑 · ↓ 蹲 · E 做梦开老板光环 · 前台领卡 → 董事会落座</div>
   </footer>
 </div>
 
@@ -140,8 +112,8 @@
 <script src="mt-assets.js"></script>
 <script>
 const cv=document.getElementById("cv"), ctx=cv.getContext("2d");
-const VW=960, VH=540, GROUND=460, WORLD_W=8200, MAX_LIVES=3;
-const INK="#252525", PAPER="#faf8f4", SIDE="#e8e4dc", SIDE2="#ddd8d0", SKY="#f0ebe4";
+const VW=960, VH=540, GROUND=460, WORLD_W=7200, MAX_LIVES=3;
+const INK="#252525", PAPER="#faf8f4", SIDE="#e8e4dc", SIDE2="#ddd8cf", SKY="#f2ebe3";
 
 /* ===== 音效 ===== */
 let actx=null, soundOn=true;
@@ -163,144 +135,96 @@ const sfx={
   push:()=>tone(110,0.08,"sawtooth",0.08,90),
   pickup:()=>{tone(700,0.08,"square",0.16);setTimeout(()=>tone(1050,0.12,"square",0.16),70);},
   bump:()=>tone(300,0.09,"square",0.16,180),
-  throw:()=>{tone(180,0.1,"square",0.14,95);setTimeout(()=>tone(420,0.07,"triangle",0.1),55);},
-  clang:()=>tone(260,0.08,"square",0.12,140),
   stomp:()=>tone(200,0.1,"square",0.15,80),
   slip:()=>{tone(320,0.12,"sawtooth",0.14,90);setTimeout(()=>tone(180,0.18,"sawtooth",0.1,60),80);},
   splash:()=>tone(420,0.05,"triangle",0.06),
   coin:()=>tone(880,0.08,"triangle",0.14),
-  spit:()=>{tone(520,0.06,"triangle",0.12,280);setTimeout(()=>tone(340,0.08,"sine",0.08),40);},
   die:()=>{tone(400,0.18,"sawtooth",0.2,120);setTimeout(()=>tone(200,0.25,"sawtooth",0.18,60),120);},
   win:()=>{tone(523,0.12,"triangle",0.2);setTimeout(()=>tone(659,0.12,"triangle",0.2),110);setTimeout(()=>tone(784,0.24,"triangle",0.22),230);},
 };
 
-/* ===== 关卡3 · 会议室（翻页 · 插话 · 激光笔 · 滑椅子） ===== */
+/* ===== 关卡5 · CEO办公室（四段式：前台 → 办公室 → 档案 → 董事会） ===== */
+const BRIEF_TIME=30;
 const ents=[
-  // A 等候 · 秘书点名
-  {type:"platform",x:-20,y:GROUND,w:720,h:80,ground:true,zone:"wait"},
-  {type:"platform",x:180,y:398,w:108,h:16},
-  {type:"platform",x:340,y:352,w:98,h:16},
-  {type:"platform",x:480,y:308,w:92,h:16},
-  {type:"lozenge",x:498,y:266,w:36,h:40,label:"润喉糖",initX:498,initY:266},
-  {type:"mic",x:590,y:GROUND-64,w:64,h:64,charge:0,open:false,need:0.78,unlock:"b1",slide:1},
-  {type:"enemy",x:660,y:GROUND-46,w:36,h:46,vx:-55,patrol:[500,820],label:"插话",interrupt:true},
+  // A 前台 · 领门禁
+  {type:"platform",x:-20,y:GROUND,w:660,h:80,ground:true,zone:"hall"},
+  {type:"npc",x:220,y:GROUND-92,w:52,h:92,label:"行政",need:"still",charge:0,served:false,give:"access"},
+  {type:"turnstile",x:480,y:GROUND-58,w:52,h:58,charge:0,open:false,id:"ts1"},
+  {type:"coin",x:340,y:GROUND-28,w:22,h:22},
 
-  // B 翻页1 → 地毯沟 + 会议桌 + @全体
-  {type:"platform",x:720,y:GROUND,w:180,h:80,ground:true},
-  {type:"spike",x:900,y:GROUND-26,w:320,h:26,label:"地毯缝",hideForUnlock:"b1"},
-  {type:"platform",x:900,y:GROUND,w:320,h:80,hidden:true,unlockGroup:"b1",ground:true},
-  {type:"platform",x:1220,y:GROUND,w:380,h:80,ground:true,zone:"hall"},
+  // B 推椅过桥
+  {type:"platform",x:640,y:GROUND,w:200,h:80,ground:true},
+  {type:"spike",x:840,y:GROUND-24,w:400,h:24,label:"搬家沟"},
+  {type:"platform",x:820,y:408,w:520,h:16,boxSlot:true},
+  {type:"box",x:700,y:GROUND-52,w:52,h:52,label:"CEO椅",heavy:true,initX:700,initY:GROUND-52},
+  {type:"platform",x:1240,y:GROUND,w:260,h:80,ground:true},
+  {type:"enemy",x:1180,y:GROUND-46,w:36,h:46,vx:58,patrol:[1000,1320],label:"同事"},
+  {type:"enemy",x:1380,y:GROUND-46,w:36,h:46,vx:-58,patrol:[1240,1480],label:"搬家师傅"},
 
-  {type:"enemy",x:1360,y:GROUND-46,w:36,h:46,vx:60,patrol:[1280,1480],label:"同事",thrower:"wok"},
-  {type:"mover",x:1480,y:376,w:118,h:18,axis:"x",range:130,speed:2.35,label:"会议桌"},
-  {type:"spike",x:1680,y:GROUND-26,w:200,h:26,label:"隔断"},
-  {type:"platform",x:1720,y:382,w:88,h:16},
-  {type:"platform",x:1840,y:338,w:92,h:16},
-  {type:"platform",x:1960,y:382,w:90,h:16},
-  {type:"platform",x:2080,y:330,w:86,h:16},
-  {type:"enemy",x:1800,y:335,w:36,h:46,vx:-68,patrol:[1740,1920],label:"同事",fast:true},
-  {type:"banana",x:1980,y:375,w:32,h:14,initX:1980},
+  // C CEO办公室 · 任命书 → 工牌 → 低门
+  {type:"platform",x:1500,y:GROUND,w:1600,h:80,ground:true,zone:"myoffice"},
+  {type:"printer",x:1660,y:GROUND-76,w:68,h:76,charge:0,served:false},
+  {type:"hazard",x:1600,y:GROUND-44,w:150,h:40,kind:"smoke",cycle:3.2,activeT:1.7,phase:0,id:"printerSmoke"},
+  {type:"npc",x:1780,y:GROUND-92,w:52,h:92,label:"秘书",need:"crouch",charge:0,served:false,give:"badge"},
+  {type:"gate",x:1880,y:GROUND-70,w:95,h:70,need:"appointment"},
+  {type:"enemy",x:2180,y:GROUND-46,w:36,h:46,vx:-62,patrol:[2000,2380],label:"同事"},
+  {type:"enemy",x:2720,y:GROUND-46,w:36,h:46,vx:55,patrol:[2520,2920],label:"同事"},
+  {type:"coin",x:2100,y:GROUND-28,w:22,h:22},
 
-  {type:"sticky",x:1280,y:GROUND-14,w:34,h:12,initX:1280},
-  {type:"sticky",x:2520,y:GROUND-14,w:34,h:12,initX:2520},
+  // D 档案 · 第二闸机 + 推箱
+  {type:"turnstile",x:3160,y:GROUND-58,w:52,h:58,charge:0,open:false,id:"ts2"},
+  {type:"platform",x:3100,y:GROUND,w:140,h:80,ground:true},
+  {type:"spike",x:3240,y:GROUND-24,w:420,h:24,label:"资料沟"},
+  {type:"platform",x:3320,y:408,w:540,h:16,boxSlot:true},
+  {type:"box",x:3120,y:GROUND-52,w:52,h:52,label:"档案",heavy:true,initX:3120,initY:GROUND-52},
+  {type:"platform",x:3660,y:GROUND,w:1540,h:80,ground:true},
+  {type:"enemy",x:3780,y:GROUND-46,w:36,h:46,vx:-60,patrol:[3660,4020],label:"同事"},
+  {type:"enemy",x:3900,y:GROUND-46,w:36,h:46,vx:62,patrol:[3720,4140],label:"行政"},
+  {type:"enemy",x:4380,y:GROUND-46,w:36,h:46,vx:68,patrol:[4180,4520],label:"行政",fast:true},
 
-  {type:"door",x:2210,y:GROUND-92,w:46,h:92,cycle:3.4,openT:1.05,phase:0.5,label:"@全体"},
-  {type:"platform",x:2280,y:GROUND,w:420,h:80,ground:true},
-  {type:"enemy",x:2380,y:GROUND-46,w:36,h:46,vx:-58,patrol:[2320,2520],label:"同事",thrower:"wok"},
+  // E 工牌门
+  {type:"gate",x:4580,y:GROUND-70,w:95,h:70,need:"badge"},
 
-  // C 茶水 · 话筒2（停稳或蹲下均可）
-  {type:"platform",x:2700,y:GROUND,w:460,h:80,ground:true,zone:"lounge"},
-  {type:"platform",x:2730,y:388,w:86,h:16},
-  {type:"coffee",x:2748,y:338,w:44,h:50,label:"咖啡"},
-  {type:"mic",x:3000,y:GROUND-64,w:58,h:64,charge:0,open:false,need:0.78,unlock:"b2",slide:2},
-  {type:"enemy",x:2660,y:GROUND-46,w:36,h:46,vx:52,patrol:[2600,2720],label:"插话",interrupt:true},
-  {type:"enemy",x:3360,y:GROUND-46,w:36,h:46,vx:-55,patrol:[3300,3480],label:"插话",interrupt:true},
-  {type:"spike",x:3160,y:GROUND-26,w:360,h:26,label:"线缆沟",hideForUnlock:"b2"},
-  {type:"platform",x:3160,y:GROUND,w:360,h:80,hidden:true,unlockGroup:"b2",ground:true},
-
-  {type:"platform",x:3520,y:GROUND,w:300,h:80,ground:true},
-  {type:"enemy",x:3420,y:GROUND-46,w:36,h:46,vx:-54,patrol:[3360,3560],label:"同事",thrower:"wok"},
-
-  // D 滑椅子过 400px 过道缝
-  {type:"platform",x:3820,y:GROUND,w:180,h:80,ground:true},
-  {type:"spike",x:4000,y:GROUND-26,w:400,h:26,label:"过道缝"},
-  {type:"platform",x:3920,y:405,w:490,h:16,boxSlot:true},
-  {type:"box",x:3640,y:GROUND-50,w:52,h:50,label:"椅子",initX:3640,initY:GROUND-50,slip:0.92},
-  {type:"platform",x:4400,y:GROUND,w:260,h:80,ground:true},
-  {type:"enemy",x:4080,y:GROUND-46,w:36,h:46,vx:65,patrol:[4020,4280],label:"同事",thrower:"wok"},
-  {type:"enemy",x:4260,y:338,w:36,h:46,vx:-60,patrol:[4160,4360],label:"同事",fast:true},
-
-  // E 讲台 · 话筒3（须蹲下）
-  {type:"platform",x:4660,y:GROUND,w:340,h:80,ground:true,zone:"stage"},
-  {type:"mic",x:4780,y:GROUND-64,w:58,h:64,charge:0,open:false,need:0.94,unlock:"b3",slide:3,crouchOnly:true},
-  {type:"enemy",x:4620,y:GROUND-46,w:36,h:46,vx:58,patrol:[4560,4720],label:"插话",interrupt:true},
-  {type:"enemy",x:5040,y:GROUND-46,w:36,h:46,vx:-62,patrol:[4980,5180],label:"插话",interrupt:true},
-  {type:"spike",x:4880,y:GROUND-26,w:220,h:26,label:"台沿",hideForUnlock:"b3"},
-  {type:"platform",x:4880,y:GROUND,w:220,h:80,hidden:true,unlockGroup:"b3",ground:true},
-  {type:"platform",x:5100,y:GROUND,w:400,h:80,ground:true},
-  {type:"enemy",x:5240,y:GROUND-46,w:36,h:46,vx:60,patrol:[5180,5380],label:"同事"},
-
-  {type:"sticky",x:4880,y:GROUND-14,w:34,h:12,initX:4880},
-
-  // F 投影 · 激光笔扫射 + 烟雾
-  {type:"projector",x:5540,y:GROUND-72,w:72,h:72},
-  {type:"ppt",x:5680,y:GROUND-130,w:200,h:88},
-  {type:"hazard",x:5460,y:GROUND-98,w:340,h:48,kind:"smoke",cycle:3.2,activeT:1.6,phase:0.3},
-  {type:"hazard",x:5440,y:GROUND-100,w:520,h:48,kind:"beam",cycle:2.6,activeT:1.25,phase:0},
-  {type:"hazard",x:5680,y:GROUND-100,w:480,h:48,kind:"beam",cycle:2.6,activeT:1.25,phase:1.3},
-  {type:"sticky",x:5620,y:GROUND-14,w:34,h:12,initX:5620},
-  {type:"platform",x:5500,y:GROUND,w:980,h:80,ground:true,zone:"deck"},
-
-  {type:"enemy",x:5660,y:GROUND-46,w:36,h:46,vx:-64,patrol:[5580,5820],label:"同事",fast:true},
-  {type:"enemy",x:5980,y:GROUND-46,w:36,h:46,vx:58,patrol:[5920,6160],label:"经理",fast:true,thrower:"folder"},
-
-  // G 散会门
-  {type:"platform",x:6480,y:GROUND,w:520,h:80,ground:true},
-  {type:"gate",x:6840,y:GROUND-72,w:98,h:72},
-  {type:"platform",x:6938,y:GROUND,w:1262,h:80,ground:true,zone:"exit"},
-  {type:"enemy",x:6620,y:GROUND-46,w:36,h:46,vx:68,patrol:[6560,6800],label:"行政",fast:true,thrower:"folder"},
-  {type:"sticky",x:6780,y:GROUND-14,w:34,h:12,initX:6780},
-  {type:"enemy",x:7140,y:GROUND-46,w:36,h:46,vx:-75,patrol:[7040,7340],label:"经理",fast:true,thrower:"folder"},
-  {type:"enemy",x:7520,y:GROUND-46,w:36,h:46,vx:58,patrol:[7460,7720],label:"同事"},
-
-  {type:"coin",x:360,y:GROUND-28,w:22,h:22},
-  {type:"coin",x:500,y:305-22,w:22,h:22},
-  {type:"coin",x:1060,y:GROUND-28,w:22,h:22},
-  {type:"coin",x:1920,y:375-22,w:22,h:22},
-  {type:"coin",x:2240,y:GROUND-28,w:22,h:22},
-  {type:"coin",x:2820,y:GROUND-28,w:22,h:22},
-  {type:"coin",x:3720,y:GROUND-28,w:22,h:22},
-  {type:"coin",x:4520,y:GROUND-28,w:22,h:22},
-  {type:"coin",x:5280,y:GROUND-28,w:22,h:22},
-  {type:"coin",x:5840,y:GROUND-28,w:22,h:22},
-  {type:"coin",x:6680,y:GROUND-28,w:22,h:22},
-  {type:"coin",x:7780,y:GROUND-28,w:22,h:22},
-
-  {type:"goal",x:8020,y:GROUND-100,w:90,h:100,label:"散会"},
+  // F 董事会 · 领文件 → 交件 → 落座
+  {type:"platform",x:5200,y:GROUND,w:280,h:80,ground:true,zone:"corner"},
+  {type:"spike",x:5480,y:GROUND-24,w:80,h:24,label:"门槛"},
+  {type:"platform",x:5560,y:GROUND,w:1640,h:80,ground:true,zone:"corner"},
+  {type:"banana",x:6120,y:298,w:32,h:14,initX:6120},
+  {type:"hideSpot",x:5980,y:GROUND-58,w:100,h:58},
+  {type:"hideSpot",x:6380,y:GROUND-58,w:100,h:58},
+  {type:"npc",x:6280,y:GROUND-92,w:52,h:92,label:"助理",need:"still",charge:0,served:false,give:"brief"},
+  {type:"dropZone",x:6680,y:GROUND-10,w:150,h:14,label:"交文件",done:false},
+  {type:"enemy",x:5820,y:GROUND-46,w:36,h:46,vx:-65,patrol:[5480,6180],label:"同事"},
+  {type:"enemy",x:6520,y:GROUND-46,w:36,h:46,vx:92,patrol:[6000,6900],label:"经理",fast:true,id:"manager"},
+  {type:"mic",x:6860,y:GROUND-72,w:90,h:72,need:1.15,unlock:"sit",charge:0,open:false,padX:20},
+  {type:"platform",x:6820,y:GROUND-8,w:180,h:12,hidden:true,unlockGroup:"sit"},
+  {type:"goal",x:6980,y:GROUND-100,w:90,h:100,label:"CEO位",hidden:true,unlockGroup:"sit"},
+  {type:"coin",x:5600,y:GROUND-28,w:22,h:22},
+  {type:"coin",x:6900,y:GROUND-28,w:22,h:22},
 ];
 
 const bgSlots=[
-  {id:"bg_3_1_sky", x:0, y:0, w:WORLD_W, h:180},
+  {id:"bg_5_1_sky", x:0, y:0, w:WORLD_W, h:180},
 ];
 
 const signSlots=[
-  {id:"ui_sign_coffee", alt:"ui_shop_coffee", x:2800, y:GROUND-112, w:72, h:48, poleX:2836, label:"茶水"},
-  {id:"ui_sign_meeting", x:7920, y:GROUND-118, w:80, h:48, poleX:7960, label:"散会"},
+  {id:"ui_sign_office", x:1520, y:GROUND-118, w:88, h:48, poleX:1564, label:"CEO办公室"},
+  {id:"ui_sign_desk", x:6880, y:GROUND-118, w:72, h:48, poleX:6916, label:"落座"},
 ];
 
 const player={x:80,y:GROUND-60,w:40,h:60,vx:0,vy:0,onGround:false,facing:1,walkT:0,squashT:0,crouch:false};
-const keys={left:false,right:false,down:false,run:false,attack:false};
+const keys={left:false,right:false,down:false,run:false};
 let camX=0, T=0, lives=MAX_LIVES, score=0, won=false, dead=false, shakeT=0;
-let fx={boost:0,crash:0,slip:0,slipDir:1,dry:0,smoke:0};
+let fx={boost:0,crash:0,slip:0,slipDir:1,dry:0,smoke:0,brief:0};
 const DREAM_DURATION=6, DREAM_COOLDOWN=10;
 let dream={active:0,cooldown:0};
-let particles=[], spits=[], props=[], splashT=0, spitCd=0;
+let particles=[], splashT=0;
 let passThroughPlat=null, passThroughT=0;
 let coyoteT=0;
 let checkpoint={x:80,y:GROUND-60,facing:1};
 let invulnT=0;
-let hasBadge=false; // 关卡3 未使用工牌
-let canSpit=false;
+let hasAccessCard=false, hasAppointment=false, hasCeoBadge=false, briefDelivered=false;
+let gateWarnT=0, boardRushNotified=-1, prevCrash=0, prevSlip=0;
 let prevLives=MAX_LIVES;
 
 const MOVE=300, RUN=480, GRAV=2200, JUMP=820, JUMP_BOOST=960;
@@ -342,6 +266,7 @@ function boxSolidBlocks(b,s){
   if(!isFloatPlat(s)) return aabb(b,s);
   if(!aabb(b,s)) return false;
   const feet=b.y+b.h;
+  if(Math.abs(feet-s.y)<6&&b.x+b.w>s.x+8&&b.x<s.x+s.w-8) return false;
   if(feet<=s.y+6&&feet>=s.y-4) return true;
   if(feet>s.y+8) return false;
   return true;
@@ -351,7 +276,6 @@ function tryMountBox(b,s,dx){
   if(b.y+b.h>GROUND+2) return false;
   if(b.x+b.w<s.x+4||b.x+b.w>s.x+28) return false;
   b.y=s.y-b.h; b.vy=0;
-  if(b.slip) b.vx=(b.vx||0)+Math.abs(dx)*3;
   return true;
 }
 function isDoorOpen(d){
@@ -415,7 +339,8 @@ function respawnPlayer(){
   player.vx=0; player.vy=0;
   player.onGround=true; player.standingOn=null;
   player.crouch=false;
-  fx.crash=0; fx.slip=0; fx.smoke=0;
+  fx.crash=0; fx.slip=0; fx.smoke=0; fx.brief=0;
+  dream={active:0,cooldown:0};
   invulnT=1.6;
   dead=false;
   updateHud();
@@ -425,149 +350,158 @@ function resetGame(){
   player.x=80; player.y=GROUND-player.h; player.vx=0; player.vy=0;
   player.onGround=true; player.facing=1; player.crouch=false;
   lives=MAX_LIVES; score=window.MTProgress?MTProgress.getRunCoins():0; won=false; dead=false; shakeT=0; splashT=0;
-  fx={boost:0,crash:0,slip:0,slipDir:1,dry:0,smoke:0}; T=0; spits=[]; props=[]; spitCd=0;
-  dream={active:0,cooldown:0};
+  fx={boost:0,crash:0,slip:0,slipDir:1,dry:0,smoke:0,brief:0}; dream={active:0,cooldown:0}; T=0;
   passThroughPlat=null; passThroughT=0; coyoteT=0;
-  checkpoint={x:80,y:GROUND-player.h,facing:1}; invulnT=0; hasBadge=false; canSpit=false;
+  checkpoint={x:80,y:GROUND-player.h,facing:1}; invulnT=0;
+  hasAccessCard=false; hasAppointment=false; hasCeoBadge=false; briefDelivered=false;
+  gateWarnT=0; boardRushNotified=-1; prevCrash=0; prevSlip=0;
   ents.forEach(e=>{
     if(e.type==="coin") e.hidden=false;
     if(e.type==="coffee") e.hidden=false;
     if(e.type==="umbrella") e.hidden=false;
     if(e.type==="banana") e.hidden=false;
-    if(e.type==="lozenge") e.hidden=false;
-    if(e.type==="sticky"){ e.hidden=false; if(e.initX!==undefined) e.x=e.initX; }
-    if(e.type==="badge") e.hidden=false;
-    if(e.type==="turnstile"||e.type==="mic"){ e.open=false; e.charge=0; }
-    if(e.hideForUnlock) e.hidden=false;
+    if(e.type==="npc"){ e.served=false; e.charge=0; }
+    if(e.type==="printer"){ e.served=false; e.charge=0; }
+    if(e.type==="dropZone") e.done=false;
+    if(e.type==="hazard"&&e.id==="printerSmoke") e.hidden=false;
+    if(e.type==="turnstile"){ e.open=false; e.charge=0; }
+    if(e.type==="mic"){ e.open=false; e.charge=0; e._unlocked=false; }
     if(e.unlockGroup) e.hidden=true;
-    if(e.type==="enemy"){
-      if(e.dead) delete e.dead;
-      e.throwCd=e.throwPhase??1.4;
-    }
-    if(e.type==="box"){ e.x=e.initX??e.x; e.y=e.initY??e.y; e.hidden=false; e.vy=0; e.vx=0; }
+    if(e.type==="enemy" && e.dead) delete e.dead;
+    if(e.type==="box"){ e.x=e.initX??e.x; e.y=e.initY??e.y; e.hidden=false; e.vy=0; }
     if(e.type==="banana"&&e.initX!==undefined) e.x=e.initX;
     if(e.type==="umbrella"&&e.initX!==undefined) e.x=e.initX;
-    if(e.type==="lozenge"&&e.initX!==undefined){ e.x=e.initX; e.y=e.initY??e.y; }
   });
   document.getElementById("overlay").classList.remove("show");
-  const spitBanner=document.getElementById("spit_unlock_banner");
-  if(spitBanner) spitBanner.classList.remove("show");
   prevLives=lives;
+  MTUI.resetCollectibles();
   updateHud();
 }
 
-function showSpitUnlockBanner(){
-  const el=document.getElementById("spit_unlock_banner");
-  if(!el) return;
-  el.classList.add("show");
-  clearTimeout(showSpitUnlockBanner._t);
-  showSpitUnlockBanner._t=setTimeout(()=>el.classList.remove("show"),3200);
-}
-
-function pulseAttackKey(){
-  const atk=document.querySelector('.key[data-k="attack"]');
-  if(!atk) return;
-  atk.classList.remove("ready");
-  void atk.offsetWidth;
-  atk.classList.add("ready");
-  clearTimeout(pulseAttackKey._t);
-  pulseAttackKey._t=setTimeout(()=>atk.classList.remove("ready"),3200);
-}
-
 function getZoneHint(x){
-  if(isDreamActive()) return "静音领域开启中：所有插话同事都定格了，话筒蓄力更快。";
-  if(x<700) return canSpit ? "X 吐口水清插话；话筒前停稳翻页。" : "秘书准备了润喉糖；跳上去拿，才能吐口水。";
-  if(x<1220) return "第一页翻好路才接上；当心甩过来的锅。";
-  if(x<1680) return "会议桌会动；隔断要跳桌面；别踩黄色便签。";
-  if(x<2280) return "等 @全体 弹窗消失再过去。";
-  if(x<2700) return "别碰咖啡；话筒2前停稳或蹲下讲。";
-  if(x<3520) return "插话同事贴话筒会打断；口水先清掉。";
-  if(x<4660) return "椅子推上桥滑过 400 的缝，当心同事。";
-  if(x<5500) return "话筒3也要蹲；翻页出讲台。";
-  if(x<6480) return "激光笔要蹲；经理会扔文件夹。";
-  return "矮门蹲下钻过去，散会门在前。";
+  if(isDreamActive()) return "老板光环开启中：门禁临时放行，同事不敢拦你，但梦里走路有点端。";
+  if(x<640) return hasAccessCard?"门禁在手，闸机秒开。":"找行政停稳领门禁卡。"
+  if(x<1500) return "把 CEO 椅推上桥台，滑过沟。"
+  if(x<1880) return hasAppointment?"任命书在手，低门可过。":"打印机旁停稳，等任命书出来。"
+  if(x<3100) return hasCeoBadge?"工牌到手，继续往前。":"找秘书蹲下领 CEO 工牌。"
+  if(x<4580) return "推档案过桥，第二道闸机再停一次。"
+  if(x<5200) return "工牌门需蹲下通过。"
+  if(x<5560) return "董事会前有门槛，别带文件夹硬跑。"
+  if(x<6280) return "董事会高峰！经理查岗，蹲进工位躲。"
+  if(x<6680) return briefDelivered?"文件已交，去落座。":"找助理领文件夹，交到落座区。"
+  return "在椅子上停稳落座。"
 }
 
 function getHelpHint(){
   const x=player.x;
-  const mic=activeMic();
-  const chair=ents.find(e=>e.type==="box"&&e.label==="椅子");
-  if(isDreamActive()) return "你正在做静音梦。插话同事和飞来的锅都会定格，趁现在去话筒前停稳讲完。";
-  if(x<700){
-    if(!canSpit) return "梦是短暂超能力。按 E 或点顶部“梦”可以让同事定格；先拿润喉糖，之后 X / J / F 可以清掉插话同事。";
-    if(mic) return "站在话筒范围内别乱动，或按住 ↓ 蹲下，等话筒进度满了就会翻页接路。";
-    return "已经能吐口水了。遇到插话同事，面向他按 X，清掉后再去话筒前停稳。";
+  const ceoChair=ents.find(e=>e.type==="box"&&e.label==="CEO椅");
+  const archiveBox=ents.find(e=>e.type==="box"&&e.label==="档案");
+  if(x<640){
+    if(!hasAccessCard) return "先找行政拿门禁卡。站在行政旁边停稳，等进度完成；拿到卡后第一道闸机会自动打开。";
+    return "门禁卡已经拿到，直接往右过闸机；如果卡在杆下，停一下再走。";
   }
-  if(x<1220) return "第一页路没接上时，回到话筒前停稳讲完；甩锅飞来时跳开或避开它的落点。";
-  if(x<1680) return "会议桌会移动，等桌子靠近再跳。黄色便签是危险点，不要踩在上面。";
-  if(x<2280) return "@全体 弹窗出现时先等，它消失后再通过；硬冲会被挡住。";
-  if(x<2700) return "第二个话筒需要停稳，窄门位置按住 ↓ 讲完。咖啡会让你停不住，尽量绕开。";
-  if(x<3520) return "插话同事贴近话筒会打断你。先站远一点按 X 清掉同事，再回话筒前充满进度。";
-  if(x<4660){
-    if(chair&&chair.x<4040) return "把椅子从左往右推到大缝里，它会当桥。推好后再站上去过沟。";
-    return "椅子已接近桥位，别急着跳 400 宽的缝，从椅子上再起跳。";
+  if(x<1500){
+    if(ceoChair&&ceoChair.x<980) return "CEO 椅很重，要从左侧一直往右推到桥台/沟边。推到位后它会帮你越过缺口。";
+    return "CEO 椅已经靠近桥位，站到椅子上或桥台边缘再跳过去。";
   }
-  if(x<5500) return "第三个话筒也要蹲下讲。按住 ↓ 别移动，等讲完后讲台会接出来。";
-  if(x<6480) return "激光笔扫过来时按住 ↓ 蹲下；经理扔文件夹时观察抛物线，别站在落点。";
-  return "最后是矮门，按住 ↓ 贴地钻过去，再往右到散会门。";
+  if(x<1880){
+    if(!hasAppointment) return "任命书在打印机旁。站在打印机前停稳等它打印出来，再去低门。";
+    return "任命书已拿到，低门位置按住 ↓ 蹲下走过去。";
+  }
+  if(x<3100){
+    if(!hasCeoBadge) return "找秘书领 CEO 工牌。靠近秘书后按住 ↓ 蹲下停稳，等她把工牌给你。";
+    return "CEO 工牌到手了，继续往右；后面的工牌闸机需要它。";
+  }
+  if(x<4580){
+    if(archiveBox&&archiveBox.x<3520) return "把档案箱从左往右推到缺口处搭桥。推好以后再去第二道闸机前停稳。";
+    return "档案箱已接近桥位，先过桥，再在第二道闸机前停稳等开。";
+  }
+  if(x<5200) return "工牌门不是跳过去的，按住 ↓ 蹲下通过；如果还过不去，确认 CEO 工牌已经拿到。";
+  if(x<5560) return "董事会前别带着文件夹硬跑，门槛处慢下来，看清地形再过。";
+  if(x<6280) return "经理查岗时要蹲进工位躲。看到高峰提示或经理靠近，先找最近工位按住 ↓。";
+  if(x<6680){
+    if(!briefDelivered&&fx.brief<=0) return "先找助理领决策文件夹。拿到后别跑别摔，直接送到落座区交付。";
+    if(!briefDelivered) return "文件夹在手时别按 Shift，摔倒会掉。稳着走到落座区停稳交付。";
+    return "文件已经交付，往右到 CEO 椅子处停稳落座。";
+  }
+  return "站在 CEO 椅子范围内松开方向键，停稳一会儿即可完成最后一步。";
 }
 
-function micZone(ts){
-  const pad=ts.crouchOnly?68:52;
-  return {x:ts.x-pad,y:GROUND-(ts.crouchOnly?86:74),w:ts.w+pad*2,h:ts.crouchOnly?98:84};
+function gateAllowed(g){
+  if(isDreamActive()) return true;
+  if(g.need==="appointment") return hasAppointment;
+  if(g.need==="badge") return hasCeoBadge;
+  return true;
 }
-function micCore(ts){
-  return {x:ts.x-4,y:ts.y-2,w:ts.w+8,h:ts.h+8};
+function gateMsg(g){
+  if(g.need==="appointment") return "需要任命书，打印机旁停稳领取";
+  if(g.need==="badge") return "需要 CEO 工牌，找秘书蹲下领取";
+  return "过不去";
 }
-function inAnyMicZone(){
-  const pb=playerBox();
-  for(const m of ents){
-    if(m.type!=="mic"||m.open) continue;
-    if(aabb(pb,micZone(m))) return true;
-  }
+function inHideSpot(pb){
+  for(const h of ents) if(h.type==="hideSpot"&&aabb(pb,h)) return true;
   return false;
 }
-
-function activeMic(){
-  const pb=playerBox();
-  let best=null, bestD=1e9;
-  for(const m of ents){
-    if(m.type!=="mic"||m.open) continue;
-    if(!aabb(pb,micZone(m))) continue;
-    const d=Math.abs(player.x+player.w/2-(m.x+m.w/2));
-    if(d<bestD){ bestD=d; best=m; }
+function tsInstantOpen(ts){
+  if(isDreamActive()) return true;
+  if(ts.id==="ts1") return hasAccessCard;
+  if(ts.id==="ts2") return hasCeoBadge;
+  return false;
+}
+function giveNpcItem(npc){
+  if(npc.give==="access"){
+    hasAccessCard=true;
+    ents.forEach(t=>{ if(t.type==="turnstile"&&t.id==="ts1"){ t.open=true; t.charge=1; } });
+    MTUI.toast("门禁卡到手");
+  } else if(npc.give==="badge"){
+    hasCeoBadge=true;
+    ents.forEach(t=>{ if(t.type==="turnstile"&&t.id==="ts2"){ t.open=true; t.charge=1; } });
+    MTUI.toast("CEO 工牌到手");
+  } else if(npc.give==="brief"){
+    fx.brief=BRIEF_TIME;
+    MTUI.toast("决策文件夹 · 别跑别摔");
   }
-  return best;
+  sfx.pickup();
+  updateHud();
+}
+function dropBrief(stumble){
+  if(fx.brief<=0) return;
+  if(isDreamActive()&&stumble){ MTUI.toast("老板光环护住了文件夹"); return; }
+  fx.brief=0;
+  updateHud();
+  if(briefDelivered) return;
+  if(stumble){
+    shakeT=0.22; sfx.bump();
+    const npc=ents.find(n=>n.type==="npc"&&n.give==="brief");
+    if(npc){ npc.served=false; npc.charge=0; }
+    MTUI.toast("文件夹掉了！回助理处重领");
+  }
 }
 
-function micAnchored(){
-  const mic=activeMic();
-  if(!mic||!player.onGround) return false;
-  const calm=!keys.left&&!keys.right;
-  if(player.crouch||(mic.charge||0)>0.06) return true;
-  if(!mic.crouchOnly&&calm) return true;
+function getBriefCollectState(){
+  if(briefDelivered) return true;
+  if(fx.brief > 0) return "active";
   return false;
 }
 
 function updateHud(){
   const pi=document.getElementById("ui_power_icon");
+  syncDreamHud();
   MTUI.updateLives(lives, MAX_LIVES, lives<prevLives);
   prevLives=lives;
   document.getElementById("ui_score").innerHTML='<span class="lbl">MT币</span>'+score;
   MTUI.updateProgress(player.x/Math.max(1,WORLD_W-200));
   MTUI.updateHint(getZoneHint(player.x));
-  syncDreamHud();
-  const atkKey=document.querySelector('.key[data-k="attack"]');
-  if(atkKey) atkKey.classList.toggle("off", !canSpit);
-  const mic=activeMic();
+  MTUI.updateCollectibles({
+    access: hasAccessCard,
+    appointment: hasAppointment,
+    badge: hasCeoBadge,
+    brief: getBriefCollectState(),
+    deliver: briefDelivered
+  });
   if(isDreamActive()){
     pi.style.display="inline-flex"; pi.className="stat fx dream";
-    pi.innerHTML='<span class="lbl">静音</span>'+dream.active.toFixed(1)+'s';
-  } else if(mic){
-    const need=mic.need||0.82;
-    const pct=Math.min(100,Math.round((mic.charge||0)/need*100));
-    pi.style.display="inline-flex"; pi.className="stat fx boost";
-    pi.innerHTML='<span class="lbl">话筒</span>'+pct+'%';
+    pi.innerHTML='<span class="lbl">光环</span>'+dream.active.toFixed(1)+'s';
   } else if(fx.boost>0){
     pi.style.display="inline-flex"; pi.className="stat fx boost";
     pi.innerHTML='<span class="lbl">加速</span>'+fx.boost.toFixed(1)+'s';
@@ -583,47 +517,42 @@ function updateHud(){
   } else if(fx.smoke>0){
     pi.style.display="inline-flex"; pi.className="stat fx smoke";
     pi.innerHTML='<span class="lbl">呛</span>'+fx.smoke.toFixed(1)+'s';
-  } else if(canSpit){
-    pi.style.display="inline-flex"; pi.className="stat fx spit";
-    pi.innerHTML='<span class="lbl">口水</span>可用';
+  } else if(fx.brief>0){
+    pi.style.display="inline-flex"; pi.className="stat fx brief";
+    pi.innerHTML='<span class="lbl">文件夹</span>'+fx.brief.toFixed(0)+'s';
   } else pi.style.display="none";
 }
 
 function isDreamActive(){ return dream.active>0; }
-function canStartDream(){ return dream.active<=0 && dream.cooldown<=0; }
+function canStartDream(){ return MTUI.isActive()&&!won&&!dead&&dream.active<=0&&dream.cooldown<=0; }
 function syncDreamHud(){
+  const root=document.getElementById("ui_dream");
   const fill=document.getElementById("ui_dream_fill");
+  const label=document.getElementById("ui_dream_label");
   const btn=document.getElementById("btn_dream");
-  if(fill){
-    let pct=100;
-    if(dream.active>0) pct=(dream.active/DREAM_DURATION)*100;
-    else if(dream.cooldown>0) pct=(1-dream.cooldown/DREAM_COOLDOWN)*100;
-    fill.style.width=Math.max(0,Math.min(100,pct)).toFixed(0)+"%";
-  }
-  if(btn){
-    const tip="梦是短暂超能力：按 E 或点这里开启静音领域，持续 6 秒；插话同事和飞来的锅都会定格，话筒蓄力更快；梦醒后冷却 10 秒。";
-    btn.disabled=!canStartDream();
-    btn.classList.toggle("ready", canStartDream());
-    btn.classList.toggle("active", isDreamActive());
-    btn.textContent=isDreamActive()?Math.ceil(dream.active):(dream.cooldown>0?Math.ceil(dream.cooldown):"梦");
-    btn.title=isDreamActive() ? "静音领域开启中：全员定格。" : (dream.cooldown>0 ? `清醒冷却 ${dream.cooldown.toFixed(1)}s。${tip}` : tip);
-    btn.setAttribute("aria-label", btn.title);
-    const root=document.getElementById("ui_dream");
-    if(root) root.title=tip;
-  }
+  if(!root||!fill||!label||!btn) return;
+  let pct=1;
+  if(dream.active>0) pct=dream.active/DREAM_DURATION;
+  else if(dream.cooldown>0) pct=1-(dream.cooldown/DREAM_COOLDOWN);
+  fill.style.width=Math.max(0,Math.min(1,pct))*100+"%";
+  label.textContent=dream.active>0?"光环":(dream.cooldown>0?dream.cooldown.toFixed(0)+"s":"做梦");
+  btn.disabled=!canStartDream();
+  root.classList.toggle("fx", dream.active>0);
+  root.classList.toggle("dream", dream.active>0);
 }
 function startDream(){
-  if(!MTUI.isActive()||won||dead||!canStartDream()) return;
+  ensureAudio();
+  if(!canStartDream()) return;
   dream.active=DREAM_DURATION;
+  fx.smoke=0;
+  MTUI.toast("做梦模式：老板光环");
   sfx.pickup();
-  MTUI.toast("做梦模式：全员定格！", 1500);
-  if(window.MTUI) MTUI.track("dream_mode_start", { dream:"meeting_silence" });
   updateHud();
 }
 function updateDream(dt){
   if(dream.active>0){
     dream.active=Math.max(0,dream.active-dt);
-    if(dream.active<=0){ dream.cooldown=DREAM_COOLDOWN; MTUI.toast("梦醒了，会议继续吵", 1200); }
+    if(dream.active<=0){ dream.cooldown=DREAM_COOLDOWN; MTUI.toast("梦醒了，光环消失", 1200); }
   } else if(dream.cooldown>0) dream.cooldown=Math.max(0,dream.cooldown-dt);
 }
 
@@ -643,143 +572,17 @@ function doJump(){
   spawnDust(player.x+player.w/2, player.y+player.h, 6);
 }
 
-function isSpeaking(){
-  const mic=activeMic();
-  if(mic&&(mic.charge||0)>0.08) return true;
-  return ents.some(m=>m.type==="mic"&&m.open&&Math.abs(player.x+player.w/2-(m.x+m.w/2))<140);
+function unlockMicGroup(key){
+  ents.forEach(e=>{ if(e.unlockGroup===key) e.hidden=false; });
 }
-
-function spawnSpit(offY, speak, spread){
-  const facing=player.facing||1;
-  const pb=playerBox();
-  const cx=player.x+player.w/2+facing*(14+spread);
-  const cy=pb.y+pb.h*0.32+offY;
-  spits.push({
-    x:cx-6, y:cy-5, w:speak?15:11, h:speak?11:8,
-    vx:facing*((speak?540:420)+spread*30), vy:-30-spread*18,
-    life:0, max:speak?0.95:0.7, big:speak
-  });
-}
-
-function doSpit(){
-  if(!MTUI.isActive()||won||dead||spitCd>0||fx.slip>0) return;
-  if(!canSpit){ MTUI.toast("先拿润喉糖"); return; }
-  const speak=isSpeaking();
-  spawnSpit(0, speak, 0);
-  if(speak) spawnSpit(4, speak, 0.15);
-  spitCd=(speak?0.34:0.48)*(isDreamActive()?1.45:1);
-  sfx.spit();
-  player.squashT=0.1;
-  spawnDust(player.x+player.w/2+(player.facing||1)*10, player.y+player.h*0.4, speak?3:2);
-}
-
-function updateSpits(dt){
-  spitCd=Math.max(0,spitCd-dt);
-  for(const s of spits){
-    s.life+=dt;
-    s.vy+=1100*dt;
-    s.x+=s.vx*dt;
-    s.y+=s.vy*dt;
-    for(const p of props){
-      if(p.life>=p.max||!aabb(s,p)) continue;
-      p.life=p.max; score+=8; sfx.clang(); s.life=s.max; break;
-    }
-    if(s.life>=s.max) continue;
-    for(const en of ents){
-      if(en.type!=="enemy"||en.dead||!aabb(s,en)) continue;
-      en.dead=true;
-      score+=s.big?55:40;
-      sfx.stomp();
-      s.life=s.max;
-      spawnDust(en.x+en.w/2,en.y+en.h*0.5,s.big?8:5);
-      break;
-    }
-  }
-  spits=spits.filter(s=>s.life<s.max&&s.x>-60&&s.x<WORLD_W+60&&s.y<GROUND+40);
-}
-
-function tryEnemyThrow(en){
-  if(!en.thrower||en.dead) return;
-  en.throwCd=(en.throwCd||0);
-  if(en.throwCd>0) return;
-  const px=player.x+player.w/2, ex=en.x+en.w/2, dx=px-ex;
-  const range=en.throwRange||(en.thrower==="folder"?280:250);
-  if(Math.abs(dx)>range||Math.abs(dx)<55) return;
-  if(Math.abs(player.y-en.y)>75||player.y>en.y+20) return;
-  const kind=en.thrower;
-  const dir=dx>0?1:-1;
-  props.push({
-    kind, x:en.x+en.w/2-(kind==="wok"?14:11), y:en.y+2,
-    w:kind==="wok"?28:26, h:kind==="wok"?16:20,
-    vx:dir*(kind==="wok"?340:460), vy:kind==="wok"?-300:-160,
-    rot:0, life:0, max:2.4, spin:dir*(kind==="wok"?9:5)
-  });
-  en.throwCd=kind==="wok"?2.5:2.0;
-  sfx.throw();
-  if(kind==="wok") MTUI.toast("对方向你甩了一口锅");
-}
-
-function updateProps(dt){
-  const pb=playerBox();
-  const pdt=isDreamActive()?0:dt;
-  for(const p of props){
-    p.life+=dt;
-    p.vy+=GRAV*pdt;
-    p.x+=p.vx*pdt;
-    p.y+=p.vy*pdt;
-    p.rot=(p.rot||0)+(p.spin||0)*pdt;
-    if(p.y+p.h>=GROUND-2&&p.vy>0){
-      p.y=GROUND-p.h;
-      if(p.vy>180){ p.vy=-p.vy*0.32; p.vx*=0.72; sfx.clang(); }
-      else{ p.vy=0; p.vx*=0.82; if(p.life>0.35) p.life=p.max-0.05; }
-    }
-    if(invulnT<=0&&!isDreamActive()&&aabb(pb,p)){
-      die();
-      p.life=p.max;
-    }
-  }
-  props=props.filter(p=>p.life<p.max&&p.x>-100&&p.x<WORLD_W+100&&p.y<GROUND+30);
-}
-
-function pickBadge(e){
-  e.hidden=true; hasBadge=true;
-  ents.forEach(t=>{ if(t.type==="turnstile"){ t.open=true; t.charge=1; } });
-  sfx.pickup(); updateHud();
-}
-function pickCoffee(e){ e.hidden=true; fx.boost=0; fx.crash=3.4; sfx.pickup(); MTUI.toast("手抖了…"); updateHud(); }
-function pickLozenge(e){
-  e.hidden=true; canSpit=true;
-  sfx.pickup();
-  MTUI.toast("口水技能已解锁！", 3200);
-  MTUI.updateHint("X 吐口水清插话 · 话筒前停稳翻页");
-  showSpitUnlockBanner();
-  pulseAttackKey();
-  const cx=player.x+player.w/2, cy=player.y+player.h*0.45;
-  for(let i=0;i<16;i++){
-    particles.push({
-      x:cx+(Math.random()-0.5)*36, y:cy+(Math.random()-0.5)*24,
-      vx:(Math.random()-0.5)*220, vy:-60-Math.random()*140,
-      life:0, max:0.45+Math.random()*0.25, r:2+Math.random()*3,
-      col:Math.random()>0.5?"#7ec87a":"#e8b84a"
-    });
-  }
-  spawnDust(cx, player.y+player.h, 10);
-  updateHud();
-}
+function pickCoffee(e){ e.hidden=true; fx.boost=4; fx.crash=0; sfx.pickup(); updateHud(); }
 function pickUmbrella(e){ e.hidden=true; fx.dry=14; sfx.pickup(); updateHud(); }
 function stepBanana(e){
   e.hidden=true; fx.slip=1.7; fx.slipDir=player.facing||1;
+  if(fx.brief>0) dropBrief(true);
   sfx.slip(); shakeT=0.2; player.onGround=false; player.vy=-80;
   spawnDust(e.x+e.w/2,e.y,10);
   for(let i=0;i<6;i++) particles.push({x:e.x+e.w/2,y:e.y,vx:(Math.random()-0.5)*200,vy:-40-Math.random()*80,life:0,max:0.35,r:2+Math.random()*2,col:"#ffe066"});
-  updateHud();
-}
-function stepSticky(e){
-  e.hidden=true;
-  fx.slip=1.1; fx.slipDir=(Math.random()>0.5?1:-1);
-  sfx.slip(); shakeT=0.12;
-  spawnDust(e.x+e.w/2,e.y,5);
-  MTUI.toast("便签粘脚上了");
   updateHud();
 }
 
@@ -800,7 +603,7 @@ function die(){
         score,
         gameOverCfg:{
           tag:"失败",
-          title:"还没讲完",
+          title:"还没落座",
           body:"生命用完了。"
         },
         onRevive(cost){
@@ -822,39 +625,23 @@ function die(){
 function showGameOver(){
   MTUI.showGameOver({
     tag:"失败",
-    title:"还没讲完",
+    title:"还没落座",
     body:"生命用完了。"
-  });
-}
-
-function revealUnlock(id){
-  let n=0;
-  ents.forEach(e=>{
-    if(e.unlockGroup===id && e.hidden){ e.hidden=false; e.revealT=2.5; n++; }
-    if(e.hideForUnlock===id) e.hidden=true;
-  });
-  if(n){ sfx.pickup(); MTUI.toast(id==="b3"?"PPT 翻页 · 讲台出现":"PPT 翻页 · 路接上了"); }
-}
-
-function syncMicUnlocks(){
-  ents.forEach(m=>{
-    if(m.type!=="mic"||!m.open||!m.unlock) return;
-    revealUnlock(m.unlock);
   });
 }
 
 function win(){
   if(won) return;
+  const sitMic=ents.find(m=>m.type==="mic"&&m.unlock==="sit");
+  if(sitMic&&!sitMic.open) return;
   won=true; sfx.win();
-  setTimeout(()=>{
-    MTUI.showWin({
-      levelId: 3,
-      title:"讲完了！",
-      body:`关卡3 · 会议室 通关。<br>MT币：${score}<br><em>PPT 三页全翻完，没人再插话了。</em><small>秘书：「下次别喝那么多咖啡。」</small>`,
-      nextUrl:"mt-level4-demo.html",
-      nextLabel:"下一关"
-    });
-  },400);
+  if(window.MTProgress){
+    MTProgress.completeLevel(5);
+    MTProgress.setRunCoins(score);
+  }
+  if(window.MTUI) MTUI.track("level_win", { score, livesLeft: lives });
+  MTUI.toast("落座成功……");
+  setTimeout(()=>{ location.href="mt-epilogue.html"; },400);
 }
 
 function update(dt){
@@ -868,9 +655,25 @@ function update(dt){
   if(fx.slip>0) fx.slip-=dt;
   if(fx.dry>0) fx.dry-=dt;
   if(fx.smoke>0) fx.smoke-=dt;
+  updateDream(dt);
+  if(fx.brief>0){
+    fx.brief-=dt;
+    if(fx.brief<=0){
+      fx.brief=0;
+      if(!briefDelivered){
+        const npc=ents.find(n=>n.type==="npc"&&n.give==="brief");
+        if(npc){ npc.served=false; npc.charge=0; }
+        MTUI.toast("文件夹超时，回助理处重领");
+      }
+      updateHud();
+    }
+  }
+  if(fx.slip>0 && prevSlip<=0 && fx.brief>0 && !isDreamActive()) dropBrief(true);
+  if(fx.crash>0 && prevCrash<=0 && fx.brief>0 && !isDreamActive()) dropBrief(true);
+  prevSlip=fx.slip; prevCrash=fx.crash;
+  if(gateWarnT>0) gateWarnT-=dt;
   if(invulnT>0) invulnT-=dt;
   if(passThroughT>0) passThroughT-=dt;
-  updateDream(dt);
 
   ents.forEach(e=>{ if(e.type==="mover"){
     if(e.baseX===undefined){ e.baseX=e.x; e.prevOff=0; }
@@ -881,59 +684,41 @@ function update(dt){
   }});
 
   ents.forEach(b=>{ if(b.type==="box"&&!b.hidden){
-    if(b.slip && Math.abs(b.vx||0)>6){
-      const ox=b.x;
-      b.x+=b.vx*dt;
-      let hit=false;
-      for(const o of solids()){
-        if(o===b||o.type==="box") continue;
-        if(!boxSolidBlocks(b,o)) continue;
-        hit=true;
-        if(b.vx>0) b.x=o.x-b.w; else b.x=o.x+o.w;
-      }
-      if(hit){ b.vx=0; sfx.bump(); }
-      else if(Math.abs(b.x-ox)>0.5) sfx.push();
-      b.vx*=0.94;
-      if(Math.abs(b.vx)<8) b.vx=0;
-    }
     b.vy=(b.vy||0)+GRAV*dt; b.y+=b.vy*dt;
-    solids().forEach(s=>{ if(s!==b&&s.type!=="box"&&aabb(b,s)&&b.vy>=0&&b.y+b.h-b.vy*dt<=s.y+8){ b.y=s.y-b.h; b.vy=0; } });
-    if(b.y>GROUND+80 && b.initX!==undefined){ b.x=b.initX; b.y=b.initY??GROUND-52; b.vy=0; b.vx=0; }
+    solids().forEach(s=>{
+      if(s===b||s.type==="box") return;
+      if(!boxSolidBlocks(b,s)||b.vy<0||b.y+b.h-b.vy*dt>s.y+8) return;
+      b.y=s.y-b.h; b.vy=0;
+    });
+    if(b.y>GROUND+80 && b.initX!==undefined){ b.x=b.initX; b.y=b.initY??GROUND-52; b.vy=0; }
   }});
 
   ents.forEach(en=>{ if(en.type==="enemy"&&!en.dead){
-    if(isDreamActive()) return;
-    const spd=en.fast?1.35:1;
+    const boardRush=(T%12)<3.2;
+    let spd=en.fast?1.45:1.08;
+    if(boardRush&&en.x>5200) spd*=1.35;
+    if(isDreamActive()) spd*=0.45;
     en.x+=en.vx*spd*dt;
     if(en.x<=en.patrol[0]){ en.x=en.patrol[0]; en.vx=Math.abs(en.vx); }
     if(en.x+en.w>=en.patrol[1]){ en.x=en.patrol[1]-en.w; en.vx=-Math.abs(en.vx); }
-    if(en.thrower){
-      if(en.throwCd>0) en.throwCd-=dt;
-      tryEnemyThrow(en);
-    }
   }});
 
-  // 插话同事：闯进话筒圈会打断蓄力
-  for(const en of ents){
-    if(en.type!=="enemy"||en.dead||!en.interrupt) continue;
-    for(const ts of ents){
-      if(ts.type!=="mic"||ts.open) continue;
-      if(!aabb(en,micCore(ts))) continue;
-      const before=ts.charge||0;
-      if(isDreamActive()) continue;
-      ts.charge=Math.max(0,before-dt*2.2);
-      if(before>0.12&&ts.charge<0.05) MTUI.toast("有人插话！");
-    }
+  const rushCycle=Math.floor(T/12);
+  if((T%12)<0.35&&rushCycle!==boardRushNotified&&player.x>5200){
+    boardRushNotified=rushCycle;
+    MTUI.toast("董事会高峰！经理和同事加快了");
   }
 
-  // 打印机烟雾 / 激光笔
+  // 打印机烟雾（有任命书后停烟）
+  const smokeH=ents.find(h=>h.id==="printerSmoke");
+  if(smokeH) smokeH.hidden=hasAppointment;
   for(const h of ents){
     if(h.type!=="hazard"||h.hidden) continue;
     const c=h.cycle||4, o=h.activeT||1.5;
     h.active=((T+(h.phase||0))%c)<o;
   }
 
-  player.crouch=keys.down && player.onGround && fx.slip<=0 && (!fx.crash||inAnyMicZone());
+  player.crouch=keys.down && player.onGround && !fx.crash && fx.slip<=0;
 
   // 浮空平台上按住 ↓ → 穿落下去
   if(keys.down && player.onGround && player.standingOn && isFloatPlat(player.standingOn)){
@@ -949,13 +734,15 @@ function update(dt){
     player.vx=fx.slipDir*RUN*0.92;
     if(dir) player.facing=dir;
   } else if(fx.crash>0){
-    if(micAnchored()) player.vx=0;
-    else player.vx=player.facing*(fx.boost>0?RUN*1.2:RUN);
+    player.vx=player.facing*(fx.boost>0?RUN*1.2:RUN);
   } else {
-    let spd=((keys.run&&!player.crouch)||fx.boost>0)?RUN:MOVE;
+    const canRun=keys.run&&!player.crouch&&fx.brief<=0;
+    let spd=((canRun)||fx.boost>0)?RUN:MOVE;
     if(player.crouch) spd*=0.45;
     if(wet) spd*=0.42;
     if(fx.smoke>0) spd*=0.55;
+    if(fx.brief>0) spd*=0.76;
+    if(isDreamActive()) spd*=0.84;
     if(fx.boost>0 && !dir) player.vx=player.facing*spd*0.6;
     else { player.vx=dir*spd; if(dir) player.facing=dir; }
   }
@@ -979,84 +766,138 @@ function update(dt){
   // 捡物
   const pb=playerBox();
   for(const e of ents){
-    if(e.type==="coin"&&!e.hidden&&aabb(pb,e)){ e.hidden=true; score+=10; sfx.coin(); MTUI.toast("+10 MT币"); }
+    if(e.type==="coin"&&!e.hidden&&aabb(pb,e)){ e.hidden=true; score+=10; sfx.coin(); }
     if(e.type==="coffee"&&!e.hidden&&aabb(pb,e)) pickCoffee(e);
-    if(e.type==="lozenge"&&!e.hidden&&aabb(pb,e)) pickLozenge(e);
     if(e.type==="umbrella"&&!e.hidden&&aabb(pb,e)) pickUmbrella(e);
-    if(e.type==="badge"&&!e.hidden&&aabb(pb,e)) pickBadge(e);
     if(e.type==="banana"&&!e.hidden&&aabb(pb,e)&&(player.onGround||player.vy>80)) stepBanana(e);
-    if(e.type==="sticky"&&!e.hidden&&aabb(pb,e)&&player.onGround) stepSticky(e);
+    if(e.type==="dropZone"&&!e.done&&fx.brief>0&&player.onGround&&aabb(pb,e)){
+      fx.brief=0; e.done=true; briefDelivered=true;
+      score+=80; sfx.coin(); MTUI.toast("+80 MT币 文件已交"); updateHud();
+    }
+  }
+
+  // 打印机：停稳出任命书
+  for(const pr of ents){
+    if(pr.type!=="printer"||pr.served) continue;
+    const zone={x:pr.x-20,y:pr.y-8,w:pr.w+40,h:pr.h+16};
+    if(!aabb(pb,zone)){ pr.charge=Math.max(0,(pr.charge||0)-dt*1.8); continue; }
+    const still=Math.abs(player.vx)<18&&player.onGround;
+    if(still||player.crouch) pr.charge=Math.min(1,(pr.charge||0)+dt*(player.crouch?1.9:1.5));
+    else pr.charge=Math.max(0,(pr.charge||0)-dt*3);
+    if(pr.charge>=0.85){
+      pr.served=true; pr.charge=1; hasAppointment=true;
+      sfx.pickup(); MTUI.toast("任命书打印好了"); updateHud();
+    }
+  }
+
+  // NPC 交付
+  for(const npc of ents){
+    if(npc.type!=="npc"||npc.served) continue;
+    const zone={x:npc.x-16,y:npc.y-8,w:npc.w+32,h:npc.h+12};
+    if(!aabb(pb,zone)){ npc.charge=Math.max(0,(npc.charge||0)-dt*1.5); continue; }
+    if(npc.give==="badge"&&!hasAppointment){
+      if(gateWarnT<=0){ gateWarnT=1.2; MTUI.toast("先等打印机出任命书"); }
+      npc.charge=Math.max(0,(npc.charge||0)-dt*2.5);
+      continue;
+    }
+    if(npc.give==="brief"&&fx.brief>0){ npc.charge=1; continue; }
+    if(npc.give==="badge"&&hasCeoBadge){ npc.served=true; npc.charge=1; continue; }
+    if(npc.give==="access"&&hasAccessCard){ npc.served=true; npc.charge=1; continue; }
+    if(npc.give==="brief"&&!hasCeoBadge){
+      if(gateWarnT<=0){ gateWarnT=1.2; MTUI.toast("先找秘书领 CEO 工牌"); }
+      npc.charge=Math.max(0,(npc.charge||0)-dt*2.5);
+      continue;
+    }
+    const still=Math.abs(player.vx)<18&&player.onGround;
+    const ok=npc.need==="crouch" ? player.crouch&&still : (player.crouch||still);
+    if(ok) npc.charge=Math.min(1,(npc.charge||0)+dt*(player.crouch?2.0:1.5));
+    else npc.charge=Math.max(0,(npc.charge||0)-dt*3);
+    if(isDreamActive()) npc.charge=Math.min(1,(npc.charge||0)+dt*1.2);
+    if(npc.charge>=0.85){
+      npc.served=true; npc.charge=1;
+      giveNpcItem(npc);
+    }
   }
 
   // 敌人
   for(const en of ents){ if(en.type==="enemy"&&!en.dead&&aabb(pb,en)){
+    if(isDreamActive()) continue;
     if(invulnT>0) continue;
+    if(en.id==="manager"&&player.crouch&&inHideSpot(pb)) continue;
     if(canStompEnemy(pb,en,player.vy,prevFeetStomp)){
       en.dead=true; player.vy=-420; sfx.stomp(); score+=50;
-    } else die();
+    } else {
+      if(fx.brief>0){ dropBrief(true); invulnT=0.8; }
+      else die();
+    }
   }}
 
-  // 烟雾 / 激光笔 / 尖刺 / 掉坑
+  // 烟雾 / 尖刺 / 掉坑
   for(const h of ents){
-    if(h.type!=="hazard"||!h.active) continue;
-    if(h.kind==="beam"){
-      if(invulnT<=0&&!isDreamActive()&&aabb(pb,h)&&!player.crouch) die();
-      continue;
-    }
-    if(aabb(pb,h)&&!isDreamActive()){
+    if(h.type==="hazard"&&h.active&&aabb(pb,h)){
+      if(isDreamActive()) continue;
       fx.smoke=Math.min(2.8,fx.smoke+dt*2.2);
       if(fx.crash<=0&&fx.slip<=0&&player.onGround) player.vx*=0.86;
     }
   }
-  if(invulnT<=0){
-    for(const e of ents){
-      if(e.type!=="spike"||e.hidden) continue;
-      if(!aabb(pb,e)) continue;
-      // 站在平台（含翻页出现的地面）上时不吃沟伤害
-      if(player.onGround&&player.standingOn) continue;
-      die();
-    }
+  if(invulnT<=0&&!isDreamActive()){
+    for(const e of ents){ if(e.type==="spike"&&aabb(pb,e)) die(); }
   }
   if(player.y>VH+60) die();
 
-  // 话筒 / 闸机：蹲或停稳蓄力；翻页解锁平台；咖啡停不住会弹回
+  // 闸机 / 落座话筒
   for(const ts of ents){
     if(ts.type!=="turnstile"&&ts.type!=="mic") continue;
-    const zone=ts.type==="mic"?micZone(ts):{x:ts.x-24,y:GROUND-64,w:ts.w+48,h:68};
-    const inZone=aabb(pb,zone);
-    if(!inZone){ ts.charge=Math.max(0,(ts.charge||0)-dt*1.2); continue; }
-    const need=ts.type==="mic"?(ts.need||0.82):0.65;
-    if((ts.type==="turnstile"&&hasBadge)||ts.open){ ts.open=true; ts.charge=1; if(ts.unlock) revealUnlock(ts.unlock); continue; }
-    const still=!ts.crouchOnly&&Math.abs(player.vx)<36&&player.onGround&&!keys.left&&!keys.right;
-    const prevCh=ts.charge||0;
-    const charging=(player.crouch&&player.onGround)||still;
-    if(charging) ts.charge=Math.min(1,(ts.charge||0)+dt*(player.crouch?2.8:2.0)*(isDreamActive()?1.7:1));
-    else ts.charge=Math.max(0,(ts.charge||0)-dt*(ts.crouchOnly?2.8:2.2));
-    if(charging&&micAnchored()) player.vx=0;
-    if(prevCh<0.08&&(ts.charge||0)>=0.08&&ts.type==="mic")
-      MTUI.toast(ts.crouchOnly?"蹲下讲…":"停稳中…");
-    if((ts.charge||0)>=need){
-      if(!ts.open && ts.unlock) revealUnlock(ts.unlock);
-      ts.open=true;
+    const pad=ts.padX||24;
+    const zone={x:ts.x-pad,y:ts.type==="mic"?ts.y-10:GROUND-62,w:ts.w+pad*2,h:ts.type==="mic"?ts.h+20:64};
+    if(!aabb(pb,zone)){ ts.charge=Math.max(0,(ts.charge||0)-dt*2); continue; }
+    if(ts.type==="turnstile"){
+      if(tsInstantOpen(ts)||ts.open){ ts.open=true; ts.charge=1; continue; }
+      const still=Math.abs(player.vx)<18&&player.onGround;
+      if(player.crouch||still) ts.charge=Math.min(1,(ts.charge||0)+dt*(player.crouch?2.2:1.2));
+      else ts.charge=Math.max(0,(ts.charge||0)-dt*3.5);
+      if(ts.charge>=0.72) ts.open=true;
+      if(ts.open) continue;
+      const bar={x:ts.x,y:ts.y+8,w:ts.w,h:ts.h-8};
+      if(!aabb(pb,bar)) continue;
+      if(fx.crash>0){ stopCrash(); player.vx=-player.facing*RUN*0.85; sfx.bump(); break; }
+      if(fx.brief>0&&Math.abs(player.vx)>280&&!isDreamActive()){ dropBrief(true); player.vx=-player.facing*RUN*0.7; sfx.bump(); break; }
+      player.vx=0;
+      if(player.facing>0) player.x=ts.x-pb.w+(player.x-pb.x);
+      else player.x=ts.x+ts.w+(player.x-pb.x);
+      sfx.bump(); break;
     }
-    if(ts.open) continue;
-    const bar={x:ts.x,y:ts.y+8,w:ts.w,h:ts.h-8};
-    if(!aabb(pb,bar)) continue;
-    // 圈内蓄力时不弹开；须蹲话筒允许先进圈再按 ↓
-    if(ts.type==="mic"&&inZone&&((ts.charge||0)>0.03||player.crouch||still||ts.crouchOnly)) continue;
-    if(fx.crash>0){ stopCrash(); player.vx=-player.facing*RUN*0.85; sfx.bump(); break; }
-    player.vx=0;
-    if(player.facing>0) player.x=ts.x-pb.w+(player.x-pb.x);
-    else player.x=ts.x+ts.w+(player.x-pb.x);
-    sfx.bump(); break;
+    if(ts.type==="mic"){
+      const need=ts.need??0.65;
+      const still=Math.abs(player.vx)<18&&player.onGround;
+      if(!briefDelivered){ ts.charge=Math.max(0,(ts.charge||0)-dt*4); continue; }
+      if(fx.crash>0){ ts.charge=Math.max(0,(ts.charge||0)-dt*4); continue; }
+      if(player.crouch||still) ts.charge=Math.min(need,(ts.charge||0)+dt*(player.crouch?2.2:1.2));
+      else ts.charge=Math.max(0,(ts.charge||0)-dt*3);
+      if(ts.charge>=need){
+        ts.open=true;
+        if(!ts._unlocked){ ts._unlocked=true; unlockMicGroup(ts.unlock); sfx.pickup(); MTUI.toast("落座"); }
+      }
+    }
   }
 
-  // 低门：仅横杠判定；站着撞门弹回，蹲下可钻过
+  // 低门：需手续；手续不足蹲也过不去，手续够则蹲下钻过
   for(const g of ents){
     if(g.type!=="gate") continue;
+    const passZone={x:g.x-4,y:GROUND-52,w:g.w+8,h:52};
+    if(!aabb(pb,passZone)) continue;
+    if(!gateAllowed(g)){
+      if(fx.crash>0){ stopCrash(); break; }
+      player.vx=0;
+      if(player.facing>0) player.x=g.x-pb.w+(player.x-pb.x)-8;
+      else player.x=g.x+g.w+(player.x-pb.x)+8;
+      sfx.bump();
+      if(gateWarnT<=0){ gateWarnT=1.2; MTUI.toast(gateMsg(g)); }
+      break;
+    }
     const bar=gateBar(g);
     if(!aabb(pb,bar)) continue;
-    if(player.crouch) continue;
+    if(player.crouch||isDreamActive()) continue;
     if(fx.crash>0){ stopCrash(); break; }
     player.vx=0;
     if(player.facing>0) player.x=g.x-pb.w+(player.x-pb.x);
@@ -1065,24 +906,25 @@ function update(dt){
     break;
   }
 
-  // Goal
-  for(const g of ents){ if(g.type==="goal"&&aabb(pb,g)) win(); }
+  // Goal（须先落座）
+  for(const g of ents){
+    if(g.type!=="goal"||g.hidden||!aabb(pb,g)) continue;
+    const sitMic=ents.find(m=>m.type==="mic"&&m.unlock==="sit");
+    if(sitMic&&!sitMic.open){ MTUI.toast("先落座"); continue; }
+    win();
+  }
 
   // 相机
   const target=player.x-VW*0.32;
   camX+=(target-camX)*Math.min(1,dt*8);
   camX=Math.max(0,Math.min(WORLD_W-VW,camX));
 
-  updateSpits(dt);
-  updateProps(dt);
   for(const pt of particles){ pt.life+=dt; pt.vy+=900*dt; pt.x+=pt.vx*dt; pt.y+=pt.vy*dt; }
   particles=particles.filter(pt=>pt.life<pt.max);
   if(splashT>0) splashT=Math.max(0,splashT-dt);
   if(player.squashT>0) player.squashT=Math.max(0,player.squashT-dt);
   if(!player.onGround) coyoteT=Math.max(0,coyoteT-dt);
   saveCheckpoint();
-  syncMicUnlocks();
-  if(T>0) ents.forEach(e=>{ if(e.revealT>0) e.revealT-=dt; });
   updateHud();
 }
 
@@ -1098,21 +940,16 @@ function moveX(dx){
     const off=player.x-pb.x;
     if(s.type==="box"){
       const pen=dx>0?(pb.x+pb.w)-s.x:pb.x-(s.x+s.w);
-      s.x+=pen; let boxBlocked=false, mounted=false;
+      const pushMul=s.heavy?0.72:1;
+      s.x+=pen*pushMul; let boxBlocked=false, mounted=false;
       for(const o of solids()){
         if(o===s||o.type==="box") continue;
         if(!boxSolidBlocks(s,o)) continue;
         if(dx>0&&tryMountBox(s,o,pen)){ mounted=true; break; }
         boxBlocked=true; break;
       }
-      if(boxBlocked) s.x-=pen;
-      else{
-        if(dx) sfx.push();
-        if(s.slip && Math.abs(pen)>0.5){
-          s.vx=(s.vx||0)+pen*3.5;
-          if(Math.abs(s.vx)>200) s.vx=Math.sign(s.vx)*200;
-        }
-      }
+      if(boxBlocked) s.x-=pen*pushMul;
+      else if(dx) sfx.push();
       if(dx>0) player.x=s.x-pb.w+off; else player.x=s.x+s.w+off;
     } else {
       if(dx>0) player.x=s.x-pb.w+off; else player.x=s.x+s.w+off;
@@ -1188,17 +1025,6 @@ function drawCoffee(e){
   ctx.globalAlpha=1;
 }
 
-function drawLozenge(e){
-  const cx=e.x+e.w/2, bob=Math.sin(T*4)*2, y=e.y+bob;
-  ctx.fillStyle="#fff6e8"; ctx.strokeStyle=INK; ctx.lineWidth=2;
-  rrect(cx-16,y+8,32,24,5); fillStroke();
-  ctx.fillStyle="#e8b84a"; ctx.strokeStyle=INK; ctx.lineWidth=1.5;
-  rrect(cx-11,y+14,22,12,3); ctx.fill(); ctx.stroke();
-  ctx.fillStyle="#7ec87a"; ctx.beginPath(); ctx.arc(cx-5,y+20,3,0,7); ctx.arc(cx+5,y+20,3,0,7); ctx.fill();
-  ctx.fillStyle=INK; ctx.font="700 9px PingFang SC,sans-serif"; ctx.textAlign="center";
-  ctx.fillText("润喉糖",cx,y+8); ctx.textAlign="left";
-}
-
 function drawBanana(e){
   const cx=e.x+e.w/2, cy=e.y+e.h/2;
   ctx.fillStyle="#ffe566"; ctx.strokeStyle=INK; ctx.lineWidth=2;
@@ -1217,18 +1043,38 @@ function drawPuddle(e){
   rline(cx-rx*0.5,cy-1,cx-rx*0.2,cy-2); rline(cx+rx*0.15,cy,cx+rx*0.45,cy-1);
 }
 
-function drawBadge(e){
+function drawKey(e){
   const cx=e.x+e.w/2, bob=Math.sin(T*4)*2;
-  ctx.fillStyle="#fff"; ctx.strokeStyle=INK; ctx.lineWidth=2;
-  rrect(cx-14,e.y+bob,28,36,4); fillStroke();
+  ctx.fillStyle="#fff8ea"; ctx.strokeStyle=INK; ctx.lineWidth=2;
+  rrect(cx-12,e.y+bob,24,28,4); fillStroke();
   ctx.fillStyle=INK; ctx.font="800 9px PingFang SC,sans-serif"; ctx.textAlign="center";
-  ctx.fillText("工牌",cx,e.y+bob+22); ctx.textAlign="left";
-  ctx.strokeStyle=INK; ctx.lineWidth=1.5;
-  ctx.beginPath(); ctx.moveTo(cx,e.y+bob+36); ctx.lineTo(cx,e.y+bob+44); ctx.stroke();
+  ctx.fillText(e.label||"门牌",cx,e.y+bob+18); ctx.textAlign="left";
 }
 
+function drawMic(e){
+  const cx=e.x+e.w/2, cy=e.y+e.h/2;
+  const pct=Math.min(1,(e.charge||0)/(e.need||1));
+  const open=e.open;
+  ctx.strokeStyle=INK; ctx.lineWidth=2; ctx.setLineDash(open?[]:[6,5]);
+  ctx.beginPath(); ctx.arc(cx,cy,36,0,7); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle=open?"rgba(126,200,122,.35)":"rgba(201,149,106,.22)";
+  ctx.beginPath(); ctx.arc(cx,cy,34,0,7); ctx.fill();
+  if(!open&&pct>0.02){
+    ctx.strokeStyle="#c9956a"; ctx.lineWidth=4;
+    ctx.beginPath(); ctx.arc(cx,cy,34,-Math.PI/2,-Math.PI/2+pct*Math.PI*2); ctx.stroke();
+  }
+  ctx.fillStyle=INK; ctx.font="700 10px PingFang SC,sans-serif"; ctx.textAlign="center";
+  ctx.fillText(open?"坐好了":(briefDelivered?"落座":"先交文件"),cx,cy+4); ctx.textAlign="left";
+  // 椅子线稿
+  ctx.strokeStyle=INK; ctx.lineWidth=2;
+  rline(cx-16,cy+18,cx+16,cy+18); rline(cx,cy+18,cx,cy+28);
+  rline(cx-12,cy+28,cx+12,cy+28);
+}
+
+function drawBadge(e){ drawKey(e); }
+
 function drawTurnstile(e){
-  const cx=e.x+e.w/2, open=e.open||hasBadge;
+  const cx=e.x+e.w/2, open=e.open||tsInstantOpen(e);
   const pct=open?1:Math.min(1,e.charge||0);
   ctx.fillStyle="#d0cdc6"; ctx.strokeStyle=INK; ctx.lineWidth=2.5;
   rrect(e.x,e.y+8,e.w,e.h-8,3); fillStroke();
@@ -1244,62 +1090,6 @@ function drawTurnstile(e){
     ctx.fillStyle="rgba(37,37,37,.55)"; ctx.font="600 9px PingFang SC,sans-serif"; ctx.textAlign="center";
     ctx.fillText("停",cx,e.y+22); ctx.textAlign="left";
   }
-}
-
-function drawMic(e){
-  const cx=e.x+e.w/2, open=e.open;
-  const need=e.need||0.82;
-  const pct=open?1:Math.min(1,(e.charge||0)/need);
-  ctx.fillStyle="#3a3a3a"; ctx.strokeStyle=INK; ctx.lineWidth=2.5;
-  rrect(e.x+10,e.y+4,e.w-20,e.h-28,4); fillStroke();
-  ctx.fillStyle="#888"; ctx.strokeStyle=INK; ctx.lineWidth=2;
-  ctx.beginPath(); ctx.arc(cx,e.y+e.h-18,14,0,7); ctx.fill(); ctx.stroke();
-  ctx.fillStyle=open?"#7ec87a":"#c9956a";
-  rrect(e.x+6,e.y+e.h-10,e.w-12,5,2); ctx.fill();
-  ctx.strokeStyle=INK; ctx.lineWidth=2.5;
-  const glow=open?0.35:0.15+pct*0.2;
-  ctx.fillStyle=`rgba(126,200,122,${glow})`;
-  ctx.beginPath(); ctx.arc(cx,e.y+16,8+pct*4,0,7); ctx.fill();
-  ctx.fillStyle=INK; ctx.font="700 10px PingFang SC,sans-serif"; ctx.textAlign="center";
-  ctx.fillText("话筒",cx,e.y+20);
-  ctx.font="600 9px PingFang SC,sans-serif";
-  ctx.fillText("P"+(e.slide||1),cx,e.y+e.h-22);
-  if(!open && pct>0.04){
-    ctx.fillStyle="rgba(37,37,37,.6)"; ctx.font="600 9px PingFang SC,sans-serif";
-    ctx.fillText(e.crouchOnly?"蹲":(pct>0.2?"停":"…"),cx,e.y+34);
-  }
-  ctx.textAlign="left";
-}
-
-function drawProjector(e){
-  ctx.fillStyle="#fff"; ctx.strokeStyle=INK; ctx.lineWidth=2.5;
-  rrect(e.x,e.y+18,e.w,e.h-18,5); fillStroke();
-  ctx.fillStyle="#ddd"; ctx.fillRect(e.x+12,e.y+32,e.w-24,20);
-  const lens=e.x+e.w-8;
-  ctx.fillStyle="#4a6a8a"; ctx.strokeStyle=INK; ctx.lineWidth=2;
-  ctx.beginPath(); ctx.arc(lens,e.y+42,10,0,7); ctx.fill(); ctx.stroke();
-  ctx.fillStyle=INK; ctx.font="700 10px PingFang SC,sans-serif"; ctx.textAlign="center";
-  ctx.fillText("投影",e.x+e.w/2,e.y+14); ctx.textAlign="left";
-}
-
-function drawPpt(e){
-  let slide=0;
-  for(const m of ents) if(m.type==="mic"&&m.open) slide=Math.max(slide,m.slide||0);
-  ctx.fillStyle="#f8f6f0"; ctx.strokeStyle=INK; ctx.lineWidth=2.5;
-  rrect(e.x,e.y,e.w,e.h,6); fillStroke();
-  ctx.fillStyle=slide>0?"#fff":"#ece8e0";
-  rrect(e.x+10,e.y+12,e.w-20,e.h-28,4); ctx.fill();
-  ctx.strokeStyle="rgba(37,37,37,.15)"; ctx.lineWidth=1.5;
-  if(slide>0){
-    ctx.fillStyle=INK; ctx.font="700 11px PingFang SC,sans-serif"; ctx.textAlign="center";
-    ctx.fillText("第 "+slide+" 页",e.x+e.w/2,e.y+e.h/2+4);
-    ctx.textAlign="left";
-  } else {
-    rline(e.x+24,e.y+e.h/2,e.x+e.w-24,e.y+e.h/2);
-    ctx.fillStyle="rgba(37,37,37,.35)"; ctx.font="600 10px PingFang SC,sans-serif"; ctx.textAlign="center";
-    ctx.fillText("待翻页",e.x+e.w/2,e.y+e.h/2+4); ctx.textAlign="left";
-  }
-  ctx.strokeStyle=INK;
 }
 
 function drawSlippers(e){
@@ -1328,7 +1118,7 @@ function drawPrinter(e){
   rrect(e.x,e.y,e.w,e.h,5); fillStroke();
   ctx.fillStyle=INK; ctx.fillRect(e.x+10,e.y+12,e.w-20,8);
   ctx.fillStyle="#ddd"; ctx.fillRect(e.x+14,e.y+28,e.w-28,22);
-  const puff=((T*2.2|0)%3);
+  const puff=(!e.served&&((T*2.2|0)%3));
   if(puff>0){
     ctx.fillStyle="rgba(180,180,175,.35)"; ctx.strokeStyle="rgba(37,37,37,.15)"; ctx.lineWidth=1.5;
     for(let i=0;i<puff;i++){
@@ -1337,7 +1127,57 @@ function drawPrinter(e){
     }
   }
   ctx.fillStyle=INK; ctx.font="700 10px PingFang SC,sans-serif"; ctx.textAlign="center";
-  ctx.fillText("打印",e.x+e.w/2,e.y+e.h-6); ctx.textAlign="left";
+  ctx.fillText(e.served?"已出":"打印",e.x+e.w/2,e.y+e.h-6);
+  if(!e.served){
+    const pct=Math.min(1,e.charge||0);
+    ctx.fillStyle="rgba(37,37,37,.08)"; ctx.fillRect(e.x+8,e.y+e.h-14,e.w-16,5);
+    ctx.fillStyle=pct>=0.85?"#7ec87a":"#e8b84a";
+    ctx.fillRect(e.x+8,e.y+e.h-14,(e.w-16)*pct,5);
+  }
+  ctx.textAlign="left";
+}
+
+function drawNpc(e){
+  const cx=e.x+e.w/2;
+  ctx.fillStyle="#fff"; ctx.strokeStyle=INK; ctx.lineWidth=2.5;
+  rrect(e.x+6,e.y+30,e.w-12,e.h-34,4); fillStroke();
+  ctx.fillStyle="#fff"; ctx.strokeStyle=INK; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.arc(cx,e.y+16,9,0,7); ctx.fill(); ctx.stroke();
+  ctx.fillStyle="#6a8090"; rrect(cx-11,e.y+26,22,28,3); ctx.fill(); ctx.stroke();
+  ctx.fillStyle=INK; ctx.font="700 11px PingFang SC,sans-serif"; ctx.textAlign="center";
+  ctx.fillText(e.label,cx,e.y+e.h-8);
+  if(!e.served){
+    const pct=Math.min(1,e.charge||0);
+    ctx.fillStyle="rgba(37,37,37,.08)"; ctx.fillRect(e.x+8,e.y+e.h-20,e.w-16,5);
+    ctx.fillStyle=pct>=0.85?"#7ec87a":"#e8b84a";
+    ctx.fillRect(e.x+8,e.y+e.h-20,(e.w-16)*pct,5);
+    ctx.font="600 9px PingFang SC,sans-serif"; ctx.fillStyle="#555";
+    ctx.fillText(e.need==="crouch"?"↓领":"停稳",cx,e.y+8);
+  } else {
+    ctx.fillStyle="#3a7040"; ctx.font="700 9px PingFang SC,sans-serif";
+    ctx.fillText("已领",cx,e.y+8);
+  }
+  ctx.textAlign="left";
+}
+
+function drawDropZone(e){
+  const pulse=0.55+Math.sin(T*5)*0.15;
+  ctx.fillStyle=`rgba(126,200,122,${pulse*0.35})`;
+  ctx.strokeStyle="#5a9058"; ctx.lineWidth=2;
+  ctx.setLineDash([6,4]);
+  rrect(e.x,e.y-4,e.w,e.h+8,4); ctx.fill(); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle="#3a7040"; ctx.font="700 10px PingFang SC,sans-serif"; ctx.textAlign="center";
+  ctx.fillText(e.done?"已交":(e.label||"交文件"),e.x+e.w/2,e.y-8); ctx.textAlign="left";
+}
+
+function drawHideSpot(e){
+  ctx.fillStyle="rgba(100,165,210,.12)"; ctx.strokeStyle="rgba(42,42,42,.25)"; ctx.lineWidth=1.5;
+  ctx.setLineDash([4,4]);
+  rrect(e.x,e.y,e.w,e.h,3); ctx.fill(); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle="rgba(42,42,42,.45)"; ctx.font="600 9px PingFang SC,sans-serif"; ctx.textAlign="center";
+  ctx.fillText("躲",e.x+e.w/2,e.y+14); ctx.textAlign="left";
 }
 
 function drawDoor(e){
@@ -1359,20 +1199,6 @@ function drawDoor(e){
 
 function drawHazard(e){
   if(!e.active) return;
-  if(e.kind==="beam"){
-    ctx.save(); ctx.globalAlpha=0.32+Math.sin(T*14)*0.08;
-    ctx.fillStyle="#ffb4b4"; ctx.strokeStyle="#c04040"; ctx.lineWidth=2;
-    rrect(e.x,e.y,e.w,e.h,3); ctx.fill(); ctx.stroke();
-    ctx.strokeStyle="rgba(255,70,70,.85)"; ctx.lineWidth=2.5;
-    for(let i=0;i<3;i++){
-      const ly=e.y+e.h/2+Math.sin(T*12+i*1.7)*5;
-      ctx.beginPath(); ctx.moveTo(e.x,ly); ctx.lineTo(e.x+e.w,ly); ctx.stroke();
-    }
-    ctx.fillStyle=INK; ctx.globalAlpha=0.8; ctx.font="700 10px PingFang SC,sans-serif"; ctx.textAlign="center";
-    ctx.fillText("激光笔",e.x+e.w/2,e.y-6); ctx.textAlign="left";
-    ctx.restore();
-    return;
-  }
   ctx.save(); ctx.globalAlpha=0.28+Math.sin(T*8)*0.06;
   ctx.fillStyle="#b8b8b0"; ctx.strokeStyle="rgba(37,37,37,.12)"; ctx.lineWidth=1.5;
   for(let i=0;i<4;i++){
@@ -1389,32 +1215,15 @@ function drawFog(){
   ctx.fillRect(0,0,VW,VH);
 }
 
-function signIconKind(s){
-  if(s.id==="ui_sign_coffee") return "coffee";
-  if(s.id==="ui_sign_meeting"||s.id==="ui_sign_exit") return "exit";
-  return "bus";
-}
-
 function drawSignIcon(kind,cx,cy){
   ctx.strokeStyle=INK; ctx.lineWidth=1.8; ctx.lineCap="round"; ctx.lineJoin="round";
   if(kind==="coffee"){
     ctx.beginPath(); ctx.arc(cx,cy-5,6.5,Math.PI,0); ctx.stroke();
     ctx.strokeRect(cx-6,cy-5,12,12);
     ctx.beginPath(); ctx.moveTo(cx-2.5,cy+1); ctx.lineTo(cx+2.5,cy+1); ctx.stroke();
-  } else if(kind==="exit"){
-    ctx.strokeRect(cx-10,cy-7,20,16);
-    rline(cx,cy-7,cx,cy+9);
-    ctx.beginPath();
-    ctx.moveTo(cx+2,cy+1); ctx.lineTo(cx+9,cy+1);
-    ctx.lineTo(cx+7,cy-2); ctx.moveTo(cx+9,cy+1); ctx.lineTo(cx+7,cy+4);
-    ctx.stroke();
-    ctx.fillStyle=INK; ctx.font="700 8px PingFang SC,sans-serif"; ctx.textAlign="center";
-    ctx.fillText("出",cx-5,cy+3); ctx.textAlign="left";
   } else {
-    ctx.strokeRect(cx-10,cy-4,18,10);
-    ctx.fillStyle=INK; ctx.fillRect(cx-7,cy-1,4,4); ctx.fillRect(cx-1,cy-1,4,4);
-    ctx.beginPath(); ctx.arc(cx+9,cy+6,2.5,0,7); ctx.stroke();
-    ctx.beginPath(); ctx.arc(cx-9,cy+6,2.5,0,7); ctx.stroke();
+    ctx.strokeRect(cx-12,cy-2,24,10);
+    rline(cx,cy+8,cx,cy+14); rline(cx-8,cy+14,cx+8,cy+14);
   }
 }
 
@@ -1433,11 +1242,7 @@ function drawSign(s){
     ctx.drawImage(img,bx+5,by+5,bw-10,bh-10);
     ctx.restore();
   } else {
-    drawSignIcon(signIconKind(s),cx,cy);
-  }
-  if(s.label){
-    ctx.fillStyle=INK; ctx.font="700 9px PingFang SC,sans-serif"; ctx.textAlign="center";
-    ctx.fillText(s.label,cx,by+bh-6); ctx.textAlign="left";
+    drawSignIcon("desk",cx,cy);
   }
 }
 
@@ -1448,11 +1253,11 @@ function drawBackground(){
 
   ctx.save(); ctx.translate(-camX,0);
 
-  const skyImg=bgImages.bg_3_1_sky;
+  const skyImg=bgImages.bg_5_1_sky;
   if(skyImg){
     ctx.drawImage(skyImg,0,0,WORLD_W,180);
     const fade=ctx.createLinearGradient(0,140,0,200);
-    fade.addColorStop(0,"rgba(240,235,228,0)"); fade.addColorStop(1,"rgba(240,235,228,.95)");
+    fade.addColorStop(0,"rgba(242,235,227,0)"); fade.addColorStop(1,"rgba(242,235,227,.95)");
     ctx.fillStyle=fade; ctx.fillRect(0,140,WORLD_W,70);
   } else {
     // 办公室天花板灯带（无背景图时的占位）
@@ -1470,33 +1275,43 @@ function drawBackground(){
     rline(x+24,GROUND+38,x+48,GROUND+38);
   }
 
-  // 会议室隔断
-  ctx.strokeStyle=INK; ctx.lineWidth=2; ctx.globalAlpha=0.1;
-  for(let x=1200;x<6400;x+=240) rline(x,GROUND-130,x,GROUND-18);
+  // 小办公室线框（储物间改的那种）
+  const ox=1520, oy=GROUND-198, ow=460, oh=196;
+  ctx.strokeStyle=INK; ctx.lineWidth=2; ctx.globalAlpha=0.22;
+  rrect(ox,oy,ow,oh,6); ctx.stroke();
+  rline(ox+36,oy+oh-28,ox+ow-36,oy+oh-28);
+  rline(ox+ow-80,oy+oh-28,ox+ow-80,oy+oh-8);
+  rline(ox+60,oy+40,ox+ow-60,oy+40);
+  ctx.globalAlpha=1;
+  ctx.fillStyle="#fff8ea"; ctx.strokeStyle=INK; ctx.lineWidth=2;
+  rrect(ox+120,oy+8,220,28,4); fillStroke();
+  ctx.fillStyle=INK; ctx.font="700 11px PingFang SC,sans-serif"; ctx.textAlign="center";
+  ctx.fillText("Zack · CEO办公室",ox+230,oy+27); ctx.textAlign="left";
+
+  // 角落小房间
+  const cx2=6820, cy2=GROUND-188, cw2=320, ch2=176;
+  ctx.strokeStyle=INK; ctx.lineWidth=2; ctx.globalAlpha=0.18;
+  rrect(cx2,cy2,cw2,ch2,6); ctx.stroke();
+  rline(cx2+40,cy2+ch2-24,cx2+cw2-40,cy2+ch2-24);
   ctx.globalAlpha=1;
 
   for(const s of signSlots) drawSign(s);
 
-  // 秘书台
+  // 打印机区提示
   ctx.fillStyle="#fff"; ctx.strokeStyle=INK; ctx.lineWidth=2;
-  rrect(520,GROUND-86,72,46,5); fillStroke();
+  rrect(1640,GROUND-72,48,28,4); fillStroke();
+  ctx.fillStyle=INK; ctx.font="700 9px PingFang SC,sans-serif"; ctx.textAlign="center";
+  ctx.fillText("文印",1664,GROUND-54); ctx.textAlign="left";
+
+  ctx.fillStyle="#fff8ea"; ctx.strokeStyle=INK; ctx.lineWidth=2;
+  rrect(220,GROUND-118,72,40,4); fillStroke();
   ctx.fillStyle=INK; ctx.font="700 10px PingFang SC,sans-serif"; ctx.textAlign="center";
-  ctx.fillText("秘书",556,GROUND-58); ctx.textAlign="left";
+  ctx.fillText("前台",256,GROUND-92); ctx.textAlign="left";
 
-  // 等候沙发（简笔）
-  ctx.fillStyle="#e8dfd3"; ctx.strokeStyle=INK; ctx.lineWidth=2;
-  for(let i=0;i<3;i++){
-    const sx=120+i*95;
-    rrect(sx,GROUND-42,70,28,6); ctx.fill(); ctx.stroke();
-  }
-
-  // 迟到榜
-  ctx.fillStyle="#fff8ea"; ctx.strokeStyle=INK; ctx.lineWidth=2.5;
-  rrect(7680,GROUND-132,140,52,5); fillStroke();
-  ctx.fillStyle=INK; ctx.font="700 11px PingFang SC,sans-serif"; ctx.textAlign="center";
-  ctx.fillText("本周迟到榜",7750,GROUND-108);
-  ctx.font="600 10px PingFang SC,sans-serif"; ctx.fillText("xxx · 第3名",7750,GROUND-92);
-  ctx.textAlign="left";
+  ctx.fillStyle="#fff8ea"; ctx.strokeStyle=INK; ctx.lineWidth=2;
+  rrect(6220,GROUND-118,120,40,4); fillStroke();
+  ctx.fillStyle=INK; ctx.font="700 10px PingFang SC,sans-serif"; ctx.textAlign="center";
+  ctx.fillText("董事会",6280,GROUND-92); ctx.textAlign="left";
 
   ctx.restore();
 
@@ -1510,20 +1325,8 @@ function drawWorld(){
   srand(20240611); ctx.strokeStyle=INK; ctx.lineCap="round"; ctx.lineJoin="round";
 
   for(const e of ents){
-    if(e.hidden && e.unlockGroup){
-      ctx.setLineDash([8,6]); ctx.strokeStyle="rgba(201,149,106,.55)"; ctx.lineWidth=2;
-      rrect(e.x,e.y,e.w,e.h,4); ctx.stroke(); ctx.setLineDash([]);
-      ctx.fillStyle="rgba(201,149,106,.12)"; ctx.fillRect(e.x,e.y,e.w,e.h);
-      ctx.fillStyle=INK; ctx.font="600 10px PingFang SC,sans-serif"; ctx.textAlign="center";
-      ctx.fillText("等翻页",e.x+e.w/2,e.y+e.h/2+4); ctx.textAlign="left";
-      continue;
-    }
     if(e.hidden) continue;
     if(e.type==="platform"||e.type==="mover"){
-      if(e.revealT>0){
-        ctx.fillStyle="rgba(126,200,122,.22)";
-        rrect(e.x,e.y-4,e.w,e.h+4,6); ctx.fill();
-      }
       ctx.fillStyle=e.ground?PAPER:"#fff";
       ctx.lineWidth=e.ground?3:2.5;
       rrect(e.x,e.y,e.w,e.h,e.ground?0:5); fillStroke();
@@ -1558,19 +1361,20 @@ function drawWorld(){
       ctx.strokeStyle=INK;
       rline(e.x+5,e.y+barH,e.x+5,e.y+e.h); rline(e.x+e.w-5,e.y+barH,e.x+e.w-5,e.y+e.h);
       ctx.fillStyle="rgba(42,42,42,.4)"; ctx.font="600 10px PingFang SC,sans-serif"; ctx.textAlign="center";
-      ctx.fillText("蹲",e.x+e.w/2,e.y+e.h-8); ctx.textAlign="left";
+      const gateLbl=e.need==="appointment"?"任命书":(e.need==="badge"?"工牌":"蹲");
+      ctx.fillText(gateLbl,e.x+e.w/2,e.y+e.h-8); ctx.textAlign="left";
+    } else if(e.type==="npc"){
+      drawNpc(e);
+    } else if(e.type==="dropZone"){
+      drawDropZone(e);
+    } else if(e.type==="hideSpot"){
+      drawHideSpot(e);
     } else if(e.type==="turnstile"){
       drawTurnstile(e);
     } else if(e.type==="mic"){
       drawMic(e);
-    } else if(e.type==="badge"){
-      drawBadge(e);
     } else if(e.type==="printer"){
       drawPrinter(e);
-    } else if(e.type==="projector"){
-      drawProjector(e);
-    } else if(e.type==="ppt"){
-      drawPpt(e);
     } else if(e.type==="door"){
       drawDoor(e);
     } else if(e.type==="hazard"){
@@ -1583,12 +1387,8 @@ function drawWorld(){
       ctx.fillStyle=INK; ctx.font="700 8px sans-serif"; ctx.textAlign="center"; ctx.fillText("M",cx,cy+3); ctx.textAlign="left";
     } else if(e.type==="coffee"){
       drawCoffee(e);
-    } else if(e.type==="lozenge"){
-      drawLozenge(e);
     } else if(e.type==="banana"){
       drawBanana(e);
-    } else if(e.type==="sticky"){
-      drawSticky(e);
     } else if(e.type==="puddle"){
       drawPuddle(e);
     } else if(e.type==="umbrella"){
@@ -1600,7 +1400,7 @@ function drawWorld(){
       rline(e.x+8,e.y+16,e.x+8,GROUND); rline(e.x+e.w-8,e.y+16,e.x+e.w-8,GROUND);
       ctx.setLineDash([6,5]); rline(e.x,e.y+22,e.x+e.w,e.y+22); ctx.setLineDash([]);
       ctx.fillStyle=INK; ctx.font="700 12px PingFang SC,sans-serif"; ctx.textAlign="center";
-      ctx.fillText(e.label||"终点",e.x+e.w/2,e.y+14); ctx.textAlign="left";
+      ctx.fillText("CEO",e.x+e.w/2,e.y+14); ctx.textAlign="left";
     }
   }
 
@@ -1672,7 +1472,7 @@ loadSprite(IMG+"hero_run.png","run");
 function drawPlayer(){
   const p=player; const cx=p.x+p.w/2-camX, footY=p.y+p.h;
   const air=!p.onGround, moving=keys.left||keys.right||Math.abs(p.vx)>30;
-  if(isDreamActive()) drawSilenceField(cx, footY-38);
+  if(isDreamActive()) drawBossAura(cx, footY-38);
   // 挤压拉伸形变（以脚底为锚点）
   let sx=1, sy=1;
   if(p.squashT>0){ const k=p.squashT/0.18; sy=1-0.30*k; sx=1+0.30*k; }
@@ -1699,50 +1499,66 @@ function drawPlayer(){
     drawGuyVector(p);   // 没有贴图时回退到矢量绘制
   }
   ctx.restore();
+  if(fx.brief>0){
+    ctx.save();
+    ctx.translate(p.x+p.w/2-camX, p.y+p.h-52);
+    if(p.facing<0) ctx.scale(-1,1);
+    ctx.fillStyle="#2a4060"; ctx.strokeStyle=INK; ctx.lineWidth=2;
+    rrect(-14,-6,28,20,3); ctx.fill(); ctx.stroke();
+    ctx.fillStyle="#fff"; ctx.font="700 8px PingFang SC,sans-serif"; ctx.textAlign="center";
+    ctx.fillText("决策",0,8); ctx.textAlign="left";
+    ctx.restore();
+  }
 }
 
-function drawSilenceField(cx, cy){
-  const pulse=(Math.sin(T*7)+1)/2;
+function drawBossAura(cx, cy){
+  const pulse=(Math.sin(T*8)+1)/2;
   ctx.save();
-  ctx.globalAlpha=0.26;
-  ctx.strokeStyle="#58a6b8";
-  ctx.lineWidth=2.5;
-  for(let i=0;i<3;i++){
-    const r=34+i*18+pulse*8;
-    ctx.beginPath();
-    ctx.ellipse(cx,cy,r,r*0.58,0,0,7);
-    ctx.stroke();
-  }
-  ctx.globalAlpha=0.9;
+  ctx.globalCompositeOperation="lighter";
+  const g=ctx.createRadialGradient(cx,cy,10,cx,cy,74+pulse*8);
+  g.addColorStop(0,"rgba(232,184,74,.5)");
+  g.addColorStop(0.5,"rgba(126,183,214,.25)");
+  g.addColorStop(1,"rgba(232,184,74,0)");
+  ctx.fillStyle=g;
+  ctx.globalAlpha=0.35;
+  ctx.beginPath(); ctx.arc(cx,cy,74+pulse*8,0,7); ctx.fill();
+  ctx.globalCompositeOperation="source-over";
+  ctx.globalAlpha=0.95;
+  ctx.strokeStyle="#e8b84a";
+  ctx.lineWidth=3;
+  ctx.beginPath(); ctx.arc(cx,cy-48,18+pulse*3,0,7); ctx.stroke();
   ctx.fillStyle="#fffdf9";
   ctx.strokeStyle=INK;
   ctx.lineWidth=2;
-  rrect(cx-24,cy-70,48,20,6);
+  rrect(cx-28,cy-78,56,20,6);
   ctx.fill(); ctx.stroke();
   ctx.fillStyle=INK;
-  ctx.font="800 12px PingFang SC,sans-serif";
+  ctx.font="800 11px PingFang SC,sans-serif";
   ctx.textAlign="center";
-  ctx.fillText("静音",cx,cy-56);
+  ctx.fillText("放行",cx,cy-64);
   ctx.textAlign="left";
-  ctx.strokeStyle="#e8b84a";
-  ctx.lineWidth=2;
-  ctx.beginPath();
-  ctx.moveTo(cx-38,cy-36); ctx.lineTo(cx-26,cy-24);
-  ctx.moveTo(cx+38,cy-36); ctx.lineTo(cx+26,cy-24);
-  ctx.stroke();
+  ctx.strokeStyle="#58a6b8";
+  ctx.lineWidth=2.5;
+  for(let i=0;i<5;i++){
+    const a=T*2.2+i*Math.PI*0.4;
+    ctx.beginPath();
+    ctx.moveTo(cx+Math.cos(a)*42, cy+Math.sin(a)*50);
+    ctx.lineTo(cx+Math.cos(a)*52, cy+Math.sin(a)*60);
+    ctx.stroke();
+  }
   ctx.restore();
 }
 
 function drawDreamOverlay(){
   if(!isDreamActive()) return;
   ctx.save();
-  ctx.globalAlpha=0.08+Math.sin(T*6)*0.012;
-  ctx.fillStyle="#7db7d6";
+  const a=0.055+Math.sin(T*5)*0.012;
+  const g=ctx.createLinearGradient(0,0,VW,0);
+  g.addColorStop(0,`rgba(232,184,74,${a})`);
+  g.addColorStop(0.5,`rgba(255,253,249,${a*0.45})`);
+  g.addColorStop(1,`rgba(126,183,214,${a})`);
+  ctx.fillStyle=g;
   ctx.fillRect(0,0,VW,VH);
-  ctx.globalAlpha=0.18;
-  ctx.strokeStyle="#fffdf9";
-  ctx.lineWidth=1.5;
-  for(let y=44+(T*18%36);y<VH;y+=36) rline(0,y,VW,y);
   ctx.restore();
 }
 
@@ -1829,63 +1645,6 @@ function drawGuyVector(p){
     ctx.beginPath(); ctx.moveTo(fx-5,hY+9); ctx.quadraticCurveTo(fx,hY+7,fx+5,hY+9); ctx.stroke();
   }
 }
-function drawSticky(e){
-  ctx.fillStyle="#fff6a8"; ctx.strokeStyle=INK; ctx.lineWidth=1.8;
-  rrect(e.x,e.y,e.w,e.h,2); fillStroke();
-  ctx.strokeStyle="rgba(37,37,37,.25)"; ctx.lineWidth=1;
-  rline(e.x+6,e.y+4,e.x+e.w-6,e.y+4);
-  rline(e.x+6,e.y+8,e.x+e.w-10,e.y+8);
-  ctx.fillStyle="rgba(37,37,37,.45)"; ctx.font="600 8px PingFang SC,sans-serif"; ctx.textAlign="center";
-  ctx.fillText("便签",e.x+e.w/2,e.y+e.h-2); ctx.textAlign="left";
-}
-
-function drawProp(p){
-  ctx.save();
-  ctx.translate(p.x+p.w/2,p.y+p.h/2);
-  ctx.rotate(p.rot||0);
-  if(p.kind==="wok"){
-    ctx.fillStyle="#5a5a5a"; ctx.strokeStyle=INK; ctx.lineWidth=2;
-    ctx.beginPath(); ctx.ellipse(0,2,p.w/2,p.h/2.2,0,0,7); ctx.fill(); ctx.stroke();
-    ctx.strokeStyle="#888"; ctx.lineWidth=2;
-    ctx.beginPath(); ctx.moveTo(p.w*0.22,-2); ctx.lineTo(p.w*0.42,-5); ctx.stroke();
-    ctx.fillStyle="rgba(255,255,255,.2)";
-    ctx.beginPath(); ctx.ellipse(-3,0,p.w*0.18,p.h*0.22,0,0,7); ctx.fill();
-  } else {
-    ctx.fillStyle="#f4e8c8"; ctx.strokeStyle=INK; ctx.lineWidth=2;
-    rrect(-p.w/2,-p.h/2,p.w,p.h,2); fillStroke();
-    ctx.strokeStyle="rgba(37,37,37,.2)"; ctx.lineWidth=1;
-    rline(-p.w/2+4,-p.h/2+5,p.w/2-4,-p.h/2+5);
-    rline(-p.w/2+4,-p.h/2+10,p.w/2-8,-p.h/2+10);
-    ctx.fillStyle="#e85d5d"; ctx.font="700 9px PingFang SC,sans-serif"; ctx.textAlign="center";
-    ctx.fillText("急",0,4); ctx.textAlign="left";
-  }
-  ctx.restore();
-}
-
-function drawProps(){
-  ctx.save(); ctx.translate(-camX,0);
-  for(const p of props) drawProp(p);
-  ctx.restore();
-}
-
-function drawSpits(){
-  ctx.save(); ctx.translate(-camX,0);
-  for(const s of spits){
-    const t=s.life/s.max;
-    ctx.globalAlpha=Math.max(0.25,1-t*0.75);
-    ctx.fillStyle=s.big?"#8ec8e8":"#a8d8f0";
-    ctx.strokeStyle="rgba(37,37,37,.35)"; ctx.lineWidth=1.5;
-    ctx.beginPath();
-    ctx.ellipse(s.x+s.w/2,s.y+s.h/2,s.w/2,s.h/2,0,0,7);
-    ctx.fill(); ctx.stroke();
-    ctx.fillStyle="rgba(255,255,255,.45)";
-    ctx.beginPath();
-    ctx.arc(s.x+s.w*0.35,s.y+s.h*0.35,Math.max(1.2,s.w*0.12),0,7);
-    ctx.fill();
-  }
-  ctx.restore();
-}
-
 function drawParticles(){
   for(const pt of particles){
     const a=Math.max(0,1-pt.life/pt.max);
@@ -1898,7 +1657,7 @@ function drawParticles(){
 function render(){
   ctx.save();
   if(shakeT>0){ shakeT-=0.016; ctx.translate((Math.random()-0.5)*6,(Math.random()-0.5)*6); }
-  drawBackground(); drawWorld(); drawProps(); drawSpits(); drawParticles(); drawPlayer(); drawFog();
+  drawBackground(); drawWorld(); drawParticles(); drawPlayer(); drawFog();
   drawDreamOverlay();
   ctx.restore();
 }
@@ -1913,7 +1672,7 @@ function loop(t){
 }
 
 /* ===== 输入 & UI ===== */
-MTUI.bindKeys(keys, doJump, ensureAudio, doSpit);
+MTUI.bindKeys(keys, doJump, ensureAudio);
 function bindDreamControls(){
   const btn=document.getElementById("btn_dream");
   if(btn) btn.addEventListener("click", startDream);
@@ -1926,14 +1685,20 @@ function bindDreamControls(){
 }
 bindDreamControls();
 MTUI.init({
-  levelId: 3,
-  guardLevel: 3,
-  levelTag:"关卡3",
+  levelId: 5,
+  levelTag:"关卡5 · 梦境试验",
   homeUrl:"../index.html",
-  defaultHint:"秘书：先拿润喉糖。梦里可以让会议静音。",
-  startTitle:"会议室",
-  startBody:"先拿润喉糖，清掉插话同事，在话筒前停稳讲完每一页。",
-  startBtn:"进去讲",
+  defaultHint:"CEO办公室。梦里可以开启老板光环。",
+  collectibles: [
+    { id: "access", label: "门禁卡" },
+    { id: "appointment", label: "任命书" },
+    { id: "badge", label: "CEO工牌" },
+    { id: "brief", label: "决策文件夹" },
+    { id: "deliver", label: "文件交付" }
+  ],
+  startTitle:"CEO办公室（梦境试验）",
+  startBody:"按 E / 点“梦”开启老板光环；门禁临时放行、文件夹不掉、同事不敢拦；用完冷却 10 秒。",
+  startBtn:"进入CEO办公室",
   ensureAudio,
   toggleSound(){ soundOn=!soundOn; if(window.MTBGM) MTBGM.setSoundOn(soundOn); return soundOn; },
   getSessionStats(){ return { score, livesLeft: lives }; },

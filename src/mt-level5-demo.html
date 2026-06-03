@@ -28,6 +28,13 @@
   .stat.fx.dry{background:#eef6ff;border-color:#7aabcc;color:#3a6080;}
   .stat.fx.smoke{background:#f0f0ee;border-color:#aaa;color:#555;}
   .stat.fx.brief{background:#eef3ff;border-color:#7a9ccc;color:#3a5080;}
+  .dream-stat{gap:8px;min-width:152px;padding-right:6px;}
+  .dream-meter{width:46px;height:6px;border:1px solid rgba(37,37,37,.28);border-radius:999px;overflow:hidden;background:#ece7de;}
+  .dream-fill{height:100%;width:0;background:#58a6b8;transition:width .12s linear;}
+  .dream-btn{width:28px;height:28px;border:1.5px solid var(--ink);border-radius:999px;background:#fffdf9;
+    color:var(--ink);font-size:14px;font-weight:800;line-height:1;cursor:pointer;box-shadow:0 2px 0 var(--ink);}
+  .dream-btn:disabled{opacity:.48;cursor:not-allowed;box-shadow:none;transform:translateY(1px);}
+  .stat.fx.dream{background:#eef8ff;border-color:#7db7d6;color:#285f7b;}
   .stage{position:relative;width:100%;background:var(--sky);}
   canvas{display:block;width:100%;height:auto;vertical-align:top;}
   .game-footer{background:var(--paper);border-top:2px solid var(--ink);padding:12px 14px 10px;}
@@ -68,6 +75,10 @@
       <div class="stats">
         <div class="stat lives-stat" id="ui_lives"><span class="lbl">命</span><span class="hearts">♥♥♥</span></div>
         <div class="stat" id="ui_score"><span class="lbl">MT币</span>0</div>
+        <div class="stat dream-stat" id="ui_dream">
+          <span class="lbl" id="ui_dream_label">做梦</span><div class="dream-meter"><div class="dream-fill" id="ui_dream_fill"></div></div>
+          <button type="button" class="dream-btn" id="btn_dream" aria-label="开启做梦模式">梦</button>
+        </div>
         <div class="stat fx" id="ui_power_icon" style="display:none"></div>
       </div>
     </div>
@@ -88,7 +99,7 @@
         <div class="key jump" data-k="jump">▲</div>
       </div>
     </div>
-    <div class="help">方向 · 空格跳 · Shift 快跑 · ↓ 蹲 · 前台领卡 → 推椅 → 领手续 → 董事会落座</div>
+    <div class="help">方向 · 空格跳 · Shift 快跑 · ↓ 蹲 · 梦=短暂超能力 · 按 E/点“梦”开启老板光环</div>
   </footer>
 </div>
 
@@ -205,6 +216,8 @@ const player={x:80,y:GROUND-60,w:40,h:60,vx:0,vy:0,onGround:false,facing:1,walkT
 const keys={left:false,right:false,down:false,run:false};
 let camX=0, T=0, lives=MAX_LIVES, score=0, won=false, dead=false, shakeT=0;
 let fx={boost:0,crash:0,slip:0,slipDir:1,dry:0,smoke:0,brief:0};
+const DREAM_DURATION=6, DREAM_COOLDOWN=10;
+let dream={active:0,cooldown:0};
 let particles=[], splashT=0;
 let passThroughPlat=null, passThroughT=0;
 let coyoteT=0;
@@ -327,6 +340,7 @@ function respawnPlayer(){
   player.onGround=true; player.standingOn=null;
   player.crouch=false;
   fx.crash=0; fx.slip=0; fx.smoke=0; fx.brief=0;
+  dream={active:0,cooldown:0};
   invulnT=1.6;
   dead=false;
   updateHud();
@@ -336,7 +350,7 @@ function resetGame(){
   player.x=80; player.y=GROUND-player.h; player.vx=0; player.vy=0;
   player.onGround=true; player.facing=1; player.crouch=false;
   lives=MAX_LIVES; score=window.MTProgress?MTProgress.getRunCoins():0; won=false; dead=false; shakeT=0; splashT=0;
-  fx={boost:0,crash:0,slip:0,slipDir:1,dry:0,smoke:0,brief:0}; T=0;
+  fx={boost:0,crash:0,slip:0,slipDir:1,dry:0,smoke:0,brief:0}; dream={active:0,cooldown:0}; T=0;
   passThroughPlat=null; passThroughT=0; coyoteT=0;
   checkpoint={x:80,y:GROUND-player.h,facing:1}; invulnT=0;
   hasAccessCard=false; hasAppointment=false; hasCeoBadge=false; briefDelivered=false;
@@ -365,6 +379,7 @@ function resetGame(){
 }
 
 function getZoneHint(x){
+  if(isDreamActive()) return "老板光环开启中：门禁临时放行，同事不敢拦你，但梦里走路有点端。";
   if(x<640) return hasAccessCard?"门禁在手，闸机秒开。":"找行政停稳领门禁卡。"
   if(x<1500) return "把 CEO 椅推上桥台，滑过沟。"
   if(x<1880) return hasAppointment?"任命书在手，低门可过。":"打印机旁停稳，等任命书出来。"
@@ -381,8 +396,9 @@ function getHelpHint(){
   const x=player.x;
   const ceoChair=ents.find(e=>e.type==="box"&&e.label==="CEO椅");
   const archiveBox=ents.find(e=>e.type==="box"&&e.label==="档案");
+  if(isDreamActive()) return "你正在做老板光环梦。门禁会临时放行，文件夹不会掉，同事不敢拦你；副作用是走路慢一点。";
   if(x<640){
-    if(!hasAccessCard) return "先找行政拿门禁卡。站在行政旁边停稳，等进度完成；拿到卡后第一道闸机会自动打开。";
+    if(!hasAccessCard) return "梦是短暂超能力。按 E 或点顶部“梦”可临时放行门禁；正常流程先找行政停稳领门禁卡。";
     return "门禁卡已经拿到，直接往右过闸机；如果卡在杆下，停一下再走。";
   }
   if(x<1500){
@@ -413,6 +429,7 @@ function getHelpHint(){
 }
 
 function gateAllowed(g){
+  if(isDreamActive()) return true;
   if(g.need==="appointment") return hasAppointment;
   if(g.need==="badge") return hasCeoBadge;
   return true;
@@ -427,6 +444,7 @@ function inHideSpot(pb){
   return false;
 }
 function tsInstantOpen(ts){
+  if(isDreamActive()) return true;
   if(ts.id==="ts1") return hasAccessCard;
   if(ts.id==="ts2") return hasCeoBadge;
   return false;
@@ -449,6 +467,7 @@ function giveNpcItem(npc){
 }
 function dropBrief(stumble){
   if(fx.brief<=0) return;
+  if(isDreamActive()&&stumble){ MTUI.toast("老板光环护住了文件夹"); return; }
   fx.brief=0;
   updateHud();
   if(briefDelivered) return;
@@ -468,6 +487,7 @@ function getBriefCollectState(){
 
 function updateHud(){
   const pi=document.getElementById("ui_power_icon");
+  syncDreamHud();
   MTUI.updateLives(lives, MAX_LIVES, lives<prevLives);
   prevLives=lives;
   document.getElementById("ui_score").innerHTML='<span class="lbl">MT币</span>'+score;
@@ -480,7 +500,10 @@ function updateHud(){
     brief: getBriefCollectState(),
     deliver: briefDelivered
   });
-  if(fx.boost>0){
+  if(isDreamActive()){
+    pi.style.display="inline-flex"; pi.className="stat fx dream";
+    pi.innerHTML='<span class="lbl">光环</span>'+dream.active.toFixed(1)+'s';
+  } else if(fx.boost>0){
     pi.style.display="inline-flex"; pi.className="stat fx boost";
     pi.innerHTML='<span class="lbl">加速</span>'+fx.boost.toFixed(1)+'s';
   } else if(fx.crash>0){
@@ -499,6 +522,45 @@ function updateHud(){
     pi.style.display="inline-flex"; pi.className="stat fx brief";
     pi.innerHTML='<span class="lbl">文件夹</span>'+fx.brief.toFixed(0)+'s';
   } else pi.style.display="none";
+}
+
+function isDreamActive(){ return dream.active>0; }
+function canStartDream(){ return MTUI.isActive()&&!won&&!dead&&dream.active<=0&&dream.cooldown<=0; }
+function syncDreamHud(){
+  const root=document.getElementById("ui_dream");
+  const fill=document.getElementById("ui_dream_fill");
+  const label=document.getElementById("ui_dream_label");
+  const btn=document.getElementById("btn_dream");
+  if(!root||!fill||!label||!btn) return;
+  let pct=1;
+  if(dream.active>0) pct=dream.active/DREAM_DURATION;
+  else if(dream.cooldown>0) pct=1-(dream.cooldown/DREAM_COOLDOWN);
+  fill.style.width=Math.max(0,Math.min(1,pct))*100+"%";
+  label.textContent=dream.active>0?"光环":(dream.cooldown>0?dream.cooldown.toFixed(0)+"s":"做梦");
+  const tip="梦是短暂超能力：按 E 或点这里开启老板光环，持续 6 秒；门禁临时放行、文件夹不掉、同事不敢拦；梦醒后冷却 10 秒；副作用是走路慢一点。";
+  const stateTip=dream.active>0?"老板光环开启中：门禁放行，文件夹不掉。":(dream.cooldown>0?`清醒冷却 ${dream.cooldown.toFixed(1)}s。${tip}`:tip);
+  root.title=stateTip;
+  label.title=stateTip;
+  btn.title=stateTip;
+  btn.setAttribute("aria-label", stateTip);
+  btn.disabled=!canStartDream();
+  root.classList.toggle("fx", dream.active>0);
+  root.classList.toggle("dream", dream.active>0);
+}
+function startDream(){
+  ensureAudio();
+  if(!canStartDream()) return;
+  dream.active=DREAM_DURATION;
+  fx.smoke=0;
+  MTUI.toast("做梦模式：老板光环");
+  sfx.pickup();
+  updateHud();
+}
+function updateDream(dt){
+  if(dream.active>0){
+    dream.active=Math.max(0,dream.active-dt);
+    if(dream.active<=0){ dream.cooldown=DREAM_COOLDOWN; MTUI.toast("梦醒了，光环消失", 1200); }
+  } else if(dream.cooldown>0) dream.cooldown=Math.max(0,dream.cooldown-dt);
 }
 
 function doJump(){
@@ -600,6 +662,7 @@ function update(dt){
   if(fx.slip>0) fx.slip-=dt;
   if(fx.dry>0) fx.dry-=dt;
   if(fx.smoke>0) fx.smoke-=dt;
+  updateDream(dt);
   if(fx.brief>0){
     fx.brief-=dt;
     if(fx.brief<=0){
@@ -612,8 +675,8 @@ function update(dt){
       updateHud();
     }
   }
-  if(fx.slip>0 && prevSlip<=0 && fx.brief>0) dropBrief(true);
-  if(fx.crash>0 && prevCrash<=0 && fx.brief>0) dropBrief(true);
+  if(fx.slip>0 && prevSlip<=0 && fx.brief>0 && !isDreamActive()) dropBrief(true);
+  if(fx.crash>0 && prevCrash<=0 && fx.brief>0 && !isDreamActive()) dropBrief(true);
   prevSlip=fx.slip; prevCrash=fx.crash;
   if(gateWarnT>0) gateWarnT-=dt;
   if(invulnT>0) invulnT-=dt;
@@ -641,6 +704,7 @@ function update(dt){
     const boardRush=(T%12)<3.2;
     let spd=en.fast?1.45:1.08;
     if(boardRush&&en.x>5200) spd*=1.35;
+    if(isDreamActive()) spd*=0.45;
     en.x+=en.vx*spd*dt;
     if(en.x<=en.patrol[0]){ en.x=en.patrol[0]; en.vx=Math.abs(en.vx); }
     if(en.x+en.w>=en.patrol[1]){ en.x=en.patrol[1]-en.w; en.vx=-Math.abs(en.vx); }
@@ -685,6 +749,7 @@ function update(dt){
     if(wet) spd*=0.42;
     if(fx.smoke>0) spd*=0.55;
     if(fx.brief>0) spd*=0.76;
+    if(isDreamActive()) spd*=0.84;
     if(fx.boost>0 && !dir) player.vx=player.facing*spd*0.6;
     else { player.vx=dir*spd; if(dir) player.facing=dir; }
   }
@@ -754,6 +819,7 @@ function update(dt){
     const ok=npc.need==="crouch" ? player.crouch&&still : (player.crouch||still);
     if(ok) npc.charge=Math.min(1,(npc.charge||0)+dt*(player.crouch?2.0:1.5));
     else npc.charge=Math.max(0,(npc.charge||0)-dt*3);
+    if(isDreamActive()) npc.charge=Math.min(1,(npc.charge||0)+dt*1.2);
     if(npc.charge>=0.85){
       npc.served=true; npc.charge=1;
       giveNpcItem(npc);
@@ -762,6 +828,7 @@ function update(dt){
 
   // 敌人
   for(const en of ents){ if(en.type==="enemy"&&!en.dead&&aabb(pb,en)){
+    if(isDreamActive()) continue;
     if(invulnT>0) continue;
     if(en.id==="manager"&&player.crouch&&inHideSpot(pb)) continue;
     if(canStompEnemy(pb,en,player.vy,prevFeetStomp)){
@@ -775,11 +842,12 @@ function update(dt){
   // 烟雾 / 尖刺 / 掉坑
   for(const h of ents){
     if(h.type==="hazard"&&h.active&&aabb(pb,h)){
+      if(isDreamActive()) continue;
       fx.smoke=Math.min(2.8,fx.smoke+dt*2.2);
       if(fx.crash<=0&&fx.slip<=0&&player.onGround) player.vx*=0.86;
     }
   }
-  if(invulnT<=0){
+  if(invulnT<=0&&!isDreamActive()){
     for(const e of ents){ if(e.type==="spike"&&aabb(pb,e)) die(); }
   }
   if(player.y>VH+60) die();
@@ -800,7 +868,7 @@ function update(dt){
       const bar={x:ts.x,y:ts.y+8,w:ts.w,h:ts.h-8};
       if(!aabb(pb,bar)) continue;
       if(fx.crash>0){ stopCrash(); player.vx=-player.facing*RUN*0.85; sfx.bump(); break; }
-      if(fx.brief>0&&Math.abs(player.vx)>280){ dropBrief(true); player.vx=-player.facing*RUN*0.7; sfx.bump(); break; }
+      if(fx.brief>0&&Math.abs(player.vx)>280&&!isDreamActive()){ dropBrief(true); player.vx=-player.facing*RUN*0.7; sfx.bump(); break; }
       player.vx=0;
       if(player.facing>0) player.x=ts.x-pb.w+(player.x-pb.x);
       else player.x=ts.x+ts.w+(player.x-pb.x);
@@ -836,7 +904,7 @@ function update(dt){
     }
     const bar=gateBar(g);
     if(!aabb(pb,bar)) continue;
-    if(player.crouch) continue;
+    if(player.crouch||isDreamActive()) continue;
     if(fx.crash>0){ stopCrash(); break; }
     player.vx=0;
     if(player.facing>0) player.x=g.x-pb.w+(player.x-pb.x);
@@ -1411,6 +1479,7 @@ loadSprite(IMG+"hero_run.png","run");
 function drawPlayer(){
   const p=player; const cx=p.x+p.w/2-camX, footY=p.y+p.h;
   const air=!p.onGround, moving=keys.left||keys.right||Math.abs(p.vx)>30;
+  if(isDreamActive()) drawBossAura(cx, footY-38);
   // 挤压拉伸形变（以脚底为锚点）
   let sx=1, sy=1;
   if(p.squashT>0){ const k=p.squashT/0.18; sy=1-0.30*k; sx=1+0.30*k; }
@@ -1447,6 +1516,57 @@ function drawPlayer(){
     ctx.fillText("决策",0,8); ctx.textAlign="left";
     ctx.restore();
   }
+}
+
+function drawBossAura(cx, cy){
+  const pulse=(Math.sin(T*8)+1)/2;
+  ctx.save();
+  ctx.globalCompositeOperation="lighter";
+  const g=ctx.createRadialGradient(cx,cy,10,cx,cy,74+pulse*8);
+  g.addColorStop(0,"rgba(232,184,74,.5)");
+  g.addColorStop(0.5,"rgba(126,183,214,.25)");
+  g.addColorStop(1,"rgba(232,184,74,0)");
+  ctx.fillStyle=g;
+  ctx.globalAlpha=0.35;
+  ctx.beginPath(); ctx.arc(cx,cy,74+pulse*8,0,7); ctx.fill();
+  ctx.globalCompositeOperation="source-over";
+  ctx.globalAlpha=0.95;
+  ctx.strokeStyle="#e8b84a";
+  ctx.lineWidth=3;
+  ctx.beginPath(); ctx.arc(cx,cy-48,18+pulse*3,0,7); ctx.stroke();
+  ctx.fillStyle="#fffdf9";
+  ctx.strokeStyle=INK;
+  ctx.lineWidth=2;
+  rrect(cx-28,cy-78,56,20,6);
+  ctx.fill(); ctx.stroke();
+  ctx.fillStyle=INK;
+  ctx.font="800 11px PingFang SC,sans-serif";
+  ctx.textAlign="center";
+  ctx.fillText("放行",cx,cy-64);
+  ctx.textAlign="left";
+  ctx.strokeStyle="#58a6b8";
+  ctx.lineWidth=2.5;
+  for(let i=0;i<5;i++){
+    const a=T*2.2+i*Math.PI*0.4;
+    ctx.beginPath();
+    ctx.moveTo(cx+Math.cos(a)*42, cy+Math.sin(a)*50);
+    ctx.lineTo(cx+Math.cos(a)*52, cy+Math.sin(a)*60);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawDreamOverlay(){
+  if(!isDreamActive()) return;
+  ctx.save();
+  const a=0.055+Math.sin(T*5)*0.012;
+  const g=ctx.createLinearGradient(0,0,VW,0);
+  g.addColorStop(0,`rgba(232,184,74,${a})`);
+  g.addColorStop(0.5,`rgba(255,253,249,${a*0.45})`);
+  g.addColorStop(1,`rgba(126,183,214,${a})`);
+  ctx.fillStyle=g;
+  ctx.fillRect(0,0,VW,VH);
+  ctx.restore();
 }
 
 function drawGuyVector(p){
@@ -1545,6 +1665,7 @@ function render(){
   ctx.save();
   if(shakeT>0){ shakeT-=0.016; ctx.translate((Math.random()-0.5)*6,(Math.random()-0.5)*6); }
   drawBackground(); drawWorld(); drawParticles(); drawPlayer(); drawFog();
+  drawDreamOverlay();
   ctx.restore();
 }
 
@@ -1559,21 +1680,32 @@ function loop(t){
 
 /* ===== 输入 & UI ===== */
 MTUI.bindKeys(keys, doJump, ensureAudio);
+function bindDreamControls(){
+  const btn=document.getElementById("btn_dream");
+  if(btn) btn.addEventListener("click", startDream);
+  addEventListener("keydown", e=>{
+    if(e.code==="KeyE"&&!e.repeat){
+      e.preventDefault();
+      startDream();
+    }
+  });
+}
+bindDreamControls();
 MTUI.init({
   levelId: 5,
   guardLevel: 5,
   levelTag:"关卡5",
   homeUrl:"../index.html",
-  defaultHint:"CEO办公室，终于到了……",
+  defaultHint:"CEO办公室。梦里可以开启老板光环。",
   collectibles: [
     { id: "access", label: "门禁卡" },
     { id: "appointment", label: "任命书" },
     { id: "badge", label: "CEO工牌" },
     { id: "brief", label: "决策文件夹" },
-    { id: "deliver", label: "文件交付" }
+    { id: "deliver", label: "落座解锁" }
   ],
   startTitle:"CEO办公室",
-  startBody:"正式上任前需要集齐需要的文件，快去寻找它们吧！",
+  startBody:"正式上任前需要集齐文件和工牌，穿过办公室，最后在董事会落座。",
   startBtn:"进入CEO办公室",
   ensureAudio,
   toggleSound(){ soundOn=!soundOn; if(window.MTBGM) MTBGM.setSoundOn(soundOn); return soundOn; },

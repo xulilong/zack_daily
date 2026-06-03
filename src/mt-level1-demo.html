@@ -37,6 +37,14 @@
   .key.run{font-size:12px;letter-spacing:.08em;width:52px;}
   .key.jump{font-size:20px;padding-bottom:3px;}
   .help{text-align:center;font-size:10px;color:var(--muted);line-height:1.5;letter-spacing:.02em;}
+  .dream-stat{gap:8px;min-width:152px;padding-right:6px;}
+  .dream-meter{width:58px;height:8px;border:1.5px solid rgba(37,37,37,.28);border-radius:999px;background:rgba(37,37,37,.08);overflow:hidden;}
+  .dream-fill{height:100%;width:100%;background:linear-gradient(90deg,#7db7d6,#e8b84a);transition:width .18s ease;}
+  .dream-btn{width:30px;height:26px;border:1.8px solid var(--ink);border-radius:8px;background:var(--paper);font:inherit;font-size:12px;font-weight:900;cursor:pointer;box-shadow:0 2px 0 var(--ink);}
+  .dream-btn.ready{background:#252525;color:#fffdf9;}
+  .dream-btn.active{background:#7db7d6;color:#fffdf9;}
+  .dream-btn:disabled{opacity:.45;cursor:not-allowed;box-shadow:none;}
+  .stat.fx.dream{background:#f0f8ff;border-color:#7db7d6;color:#285f7b;}
   .overlay{position:absolute;inset:0;background:rgba(37,37,37,.52);display:none;align-items:center;justify-content:center;z-index:20;}
   .overlay.show{display:flex;}
   .modal{background:var(--cream);border:2px solid var(--ink);border-radius:var(--r);
@@ -66,6 +74,11 @@
       <div class="stats">
         <div class="stat lives-stat" id="ui_lives"><span class="lbl">命</span><span class="hearts">♥♥♥</span></div>
         <div class="stat" id="ui_score"><span class="lbl">MT币</span>0</div>
+        <div class="stat dream-stat" id="ui_dream">
+          <span class="lbl">梦</span>
+          <span class="dream-meter"><span class="dream-fill" id="ui_dream_fill"></span></span>
+          <button type="button" class="dream-btn" id="btn_dream" aria-label="开启做梦模式">梦</button>
+        </div>
         <div class="stat fx" id="ui_power_icon" style="display:none"></div>
       </div>
     </div>
@@ -86,7 +99,7 @@
         <div class="key jump" data-k="jump">▲</div>
       </div>
     </div>
-    <div class="help">方向移动 · 空格跳 · Shift 快跑 · ↓ 蹲 / 穿平台</div>
+    <div class="help">方向移动 · 空格跳 · Shift 快跑 · 梦=短暂超能力 · 按 E/点“梦”飞行 · 梦中 ↑↓ 反向</div>
   </footer>
 </div>
 
@@ -215,9 +228,11 @@ const signSlots=[
 ];
 
 const player={x:80,y:GROUND-60,w:40,h:60,vx:0,vy:0,onGround:false,facing:1,walkT:0,squashT:0,crouch:false};
-const keys={left:false,right:false,down:false,run:false};
+const keys={left:false,right:false,down:false,run:false,up:false};
 let camX=0, T=0, lives=MAX_LIVES, score=0, won=false, dead=false, shakeT=0;
 let fx={boost:0,crash:0,slip:0,slipDir:1,dry:0};
+const DREAM_DURATION=6, DREAM_COOLDOWN=10, DREAM_FLY=360;
+let dream={active:0,cooldown:0};
 let particles=[], splashT=0;
 let passThroughPlat=null, passThroughT=0;
 let coyoteT=0;
@@ -325,6 +340,8 @@ function resetGame(){
   player.onGround=true; player.facing=1; player.crouch=false;
   lives=MAX_LIVES; score=0; won=false; dead=false; shakeT=0; splashT=0;
   fx={boost:0,crash:0,slip:0,slipDir:1,dry:0}; T=0;
+  dream={active:0,cooldown:0};
+  keys.up=false;
   passThroughPlat=null; passThroughT=0; coyoteT=0;
   checkpoint={x:80,y:GROUND-player.h,facing:1}; invulnT=0;
   ents.forEach(e=>{
@@ -343,6 +360,7 @@ function resetGame(){
 }
 
 function getZoneHint(x){
+  if(isDreamFlying()) return "飞行梦开启中：↑ 会下降，↓ 会上升。";
   if(x<900) return "又睡过头了，快往公交站赶。";
   if(x<1400) return "施工沟：箱子推过去能搭桥。";
   if(x<1780) return "低门要蹲下，别硬撞。";
@@ -352,10 +370,11 @@ function getZoneHint(x){
 
 function getHelpHint(){
   const x=player.x;
+  if(isDreamFlying()) return "你正在做飞行梦。梦里可以飞过堵车和施工沟，但上下控制是反的：按 ↑ 会下降，按 ↓ 会上升。";
   const box1=ents.find(e=>e.type==="box"&&e.initX===1320);
   const box2=ents.find(e=>e.type==="box"&&e.initX===2340);
   const umbrella=ents.find(e=>e.type==="umbrella");
-  if(x<900) return "往右走，路人可以从头顶踩掉。施工沟前要按住 Shift 助跑，再连续跳上小平台。";
+  if(x<900) return "梦是短暂超能力。按 E 或点顶部“梦”，可以飞过堵车和施工路段；梦里 ↑↓ 是反的。";
   if(x<1180) return "这段不是推箱，是跳台。按住 Shift 向右跑，落到每个白色平台上，不要站在施工尖刺里。";
   if(x<1400) return "低门这里按住 ↓ 蹲下走过去。别快跑撞门，撞上会停不住。";
   if(x<1780){
@@ -378,7 +397,11 @@ function updateHud(){
   document.getElementById("ui_score").innerHTML='<span class="lbl">MT币</span>'+score;
   MTUI.updateProgress(player.x/Math.max(1,WORLD_W-200));
   MTUI.updateHint(getZoneHint(player.x));
-  if(fx.boost>0){
+  syncDreamHud();
+  if(isDreamFlying()){
+    pi.style.display="inline-flex"; pi.className="stat fx dream";
+    pi.innerHTML='<span class="lbl">飞行梦</span>'+dream.active.toFixed(1)+'s';
+  } else if(fx.boost>0){
     pi.style.display="inline-flex"; pi.className="stat fx boost";
     pi.innerHTML='<span class="lbl">加速</span>'+fx.boost.toFixed(1)+'s';
   } else if(fx.crash>0){
@@ -393,8 +416,58 @@ function updateHud(){
   } else pi.style.display="none";
 }
 
+function isDreamFlying(){ return dream.active>0; }
+function canStartDream(){ return dream.active<=0 && dream.cooldown<=0; }
+function syncDreamHud(){
+  const fill=document.getElementById("ui_dream_fill");
+  const btn=document.getElementById("btn_dream");
+  if(fill){
+    let pct=100;
+    if(dream.active>0) pct=(dream.active/DREAM_DURATION)*100;
+    else if(dream.cooldown>0) pct=(1-dream.cooldown/DREAM_COOLDOWN)*100;
+    fill.style.width=Math.max(0,Math.min(100,pct)).toFixed(0)+"%";
+  }
+  if(btn){
+    const tip="梦是短暂超能力：按 E 或点这里开启飞行梦，持续 6 秒；梦醒后冷却 10 秒；副作用是飞行时上下键反向。";
+    btn.disabled=!canStartDream();
+    btn.classList.toggle("ready", canStartDream());
+    btn.classList.toggle("active", isDreamFlying());
+    btn.textContent=isDreamFlying()?Math.ceil(dream.active):(dream.cooldown>0?Math.ceil(dream.cooldown):"梦");
+    btn.title=isDreamFlying() ? "飞行梦开启中：上下键反向" :
+      (dream.cooldown>0 ? `清醒冷却 ${dream.cooldown.toFixed(1)}s。${tip}` : tip);
+    btn.setAttribute("aria-label", btn.title);
+    const root=document.getElementById("ui_dream");
+    if(root) root.title=tip;
+  }
+}
+function startDream(){
+  if(!MTUI.isActive()||won||dead||!canStartDream()) return;
+  dream.active=DREAM_DURATION;
+  fx.slip=0; fx.crash=0;
+  player.crouch=false;
+  player.onGround=false;
+  player.vy=-120;
+  sfx.pickup();
+  MTUI.toast("做梦模式：飞起来了！↑↓反向", 1800);
+  if(window.MTUI) MTUI.track("dream_mode_start", { dream:"fly_reverse_y" });
+  updateHud();
+}
+function updateDream(dt){
+  if(dream.active>0){
+    dream.active=Math.max(0,dream.active-dt);
+    if(dream.active<=0){
+      dream.cooldown=DREAM_COOLDOWN;
+      player.vy=Math.min(player.vy, 120);
+      MTUI.toast("梦醒了，慢慢落地", 1200);
+    }
+  } else if(dream.cooldown>0){
+    dream.cooldown=Math.max(0,dream.cooldown-dt);
+  }
+}
+
 function doJump(){
   if(!MTUI.isActive()||won||dead) return;
+  if(isDreamFlying()) return;
   if(player.crouch) return;
   if(fx.slip>0) return;
   if(!player.onGround && coyoteT<=0) return;
@@ -489,6 +562,7 @@ function update(dt){
   if(fx.dry>0) fx.dry-=dt;
   if(invulnT>0) invulnT-=dt;
   if(passThroughT>0) passThroughT-=dt;
+  updateDream(dt);
 
   ents.forEach(e=>{ if(e.type==="mover"){
     if(e.baseX===undefined){ e.baseX=e.x; e.prevOff=0; }
@@ -510,10 +584,10 @@ function update(dt){
     if(en.x+en.w>=en.patrol[1]){ en.x=en.patrol[1]-en.w; en.vx=-Math.abs(en.vx); }
   }});
 
-  player.crouch=keys.down && player.onGround && !fx.crash && fx.slip<=0;
+  player.crouch=!isDreamFlying() && keys.down && player.onGround && !fx.crash && fx.slip<=0;
 
   // 浮空平台上按住 ↓ → 穿落下去
-  if(keys.down && player.onGround && player.standingOn && isFloatPlat(player.standingOn)){
+  if(!isDreamFlying() && keys.down && player.onGround && player.standingOn && isFloatPlat(player.standingOn)){
     passThroughPlat=player.standingOn; passThroughT=0.3;
     player.onGround=false; player.standingOn=null; player.vy=120;
   }
@@ -535,6 +609,27 @@ function update(dt){
     else { player.vx=dir*spd; if(dir) player.facing=dir; }
   }
 
+  const pbBefore=playerBox();
+  const prevFeetStomp=pbBefore.y+pbBefore.h;
+
+  if(isDreamFlying()){
+    const vertical=(keys.up?1:0)-(keys.down?1:0); // 做梦副作用：上下键反向
+    player.vy=vertical*DREAM_FLY;
+    player.onGround=false;
+    player.standingOn=null;
+    moveX(player.vx*dt);
+    moveY(player.vy*dt);
+    if((dir||vertical) && Math.random()<0.35) particles.push({
+      x:player.x+player.w/2,
+      y:player.y+player.h*0.55,
+      vx:(Math.random()-0.5)*70,
+      vy:30+Math.random()*80,
+      life:0,
+      max:0.55,
+      r:2+Math.random()*3,
+      col:"#9ad7ff"
+    });
+  } else {
   if(dir&&player.onGround&&!player.crouch){
     player.walkT+=dt; stepTimer-=dt;
     if(stepTimer<=0){
@@ -545,11 +640,10 @@ function update(dt){
     }
   }
 
-  const pbBefore=playerBox();
-  const prevFeetStomp=pbBefore.y+pbBefore.h;
   player.vy+=GRAV*dt;
   moveX(player.vx*dt);
   moveY(player.vy*dt);
+  }
 
   // 捡物
   const pb=playerBox();
@@ -1049,11 +1143,60 @@ function drawParticles(){
   ctx.globalAlpha=1;
 }
 
+function drawDreamAura(){
+  if(!isDreamFlying()) return;
+  const cx=player.x+player.w/2-camX, cy=player.y+player.h/2;
+  const pulse=0.65+Math.sin(T*8)*0.18;
+  ctx.save();
+  ctx.globalAlpha=pulse;
+  ctx.strokeStyle="#7db7d6";
+  ctx.lineWidth=3;
+  ctx.setLineDash([10,8]);
+  ctx.beginPath();
+  ctx.ellipse(cx,cy,42,34,Math.sin(T*2)*0.25,0,Math.PI*2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.globalAlpha=0.18;
+  ctx.fillStyle="#9ad7ff";
+  ctx.beginPath();
+  ctx.ellipse(cx,cy,50,38,0,0,Math.PI*2);
+  ctx.fill();
+  ctx.restore();
+}
+
 function render(){
   ctx.save();
   if(shakeT>0){ shakeT-=0.016; ctx.translate((Math.random()-0.5)*6,(Math.random()-0.5)*6); }
-  drawBackground(); drawWorld(); drawParticles(); drawPlayer();
+  drawBackground(); drawWorld(); drawDreamAura(); drawParticles(); drawPlayer();
   ctx.restore();
+}
+
+function bindDreamControls(){
+  const btn=document.getElementById("btn_dream");
+  if(btn) btn.addEventListener("click", startDream);
+  addEventListener("keydown", e => {
+    if(e.code==="KeyE" && !e.repeat){
+      e.preventDefault();
+      startDream();
+      return;
+    }
+    if(isDreamFlying() && (e.code==="ArrowUp" || e.code==="Space" || e.code==="KeyW")){
+      keys.up=true;
+      e.preventDefault();
+    }
+  });
+  addEventListener("keyup", e => {
+    if(e.code==="ArrowUp" || e.code==="Space" || e.code==="KeyW") keys.up=false;
+  });
+  const jumpKey=document.querySelector('.key[data-k="jump"]');
+  if(jumpKey){
+    const upOn = () => { if(isDreamFlying()) keys.up=true; };
+    const upOff = () => { keys.up=false; };
+    jumpKey.addEventListener("pointerdown", upOn);
+    jumpKey.addEventListener("pointerup", upOff);
+    jumpKey.addEventListener("pointerleave", upOff);
+    jumpKey.addEventListener("pointercancel", upOff);
+  }
 }
 
 let last=0;
@@ -1066,14 +1209,15 @@ function loop(t){
 }
 
 MTUI.bindKeys(keys, doJump, ensureAudio);
+bindDreamControls();
 MTUI.init({
   levelId: 1,
   guardLevel: 1,
   levelTag:"关卡1",
   homeUrl:"../index.html",
-  defaultHint:"又睡过头了。",
+  defaultHint:"又睡过头了。堵车时可以做梦飞起来。",
   startTitle:"上班路上",
-  startBody:"键盘或屏幕按钮操作。<br>方向移动 · 空格跳 · Shift 快跑 · ↓ 蹲",
+  startBody:"键盘或屏幕按钮操作。赶上公交前，穿过堵车、施工和积水路段。",
   startBtn:"出发上班",
   ensureAudio,
   toggleSound(){ soundOn=!soundOn; if(window.MTBGM) MTBGM.setSoundOn(soundOn); return soundOn; },

@@ -153,11 +153,13 @@
 .lb-name{flex:1;min-width:0;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .lb-score{flex:0 0 auto;font-weight:800;color:#8a5a28;font-size:12px;white-space:nowrap;}
 @media (max-width:640px){
+  .game-footer{padding:9px 12px 8px !important;}
+  .pad{gap:8px;}
   .game-header .title{font-size:13px;}
   .game-header .hint{font-size:11px;}
   .tb{width:34px;height:34px;font-size:14px;}
-  .key{width:52px;height:52px;font-size:20px;}
-  .key.run{width:48px;font-size:11px;}
+  .key{width:46px !important;height:48px !important;font-size:18px;}
+  .key.run{width:44px !important;font-size:11px;}
   .level-progress-list .level-item{gap:8px;padding:7px;}
   .level-progress-list .level-thumb-wrap{flex-basis:76px;width:76px;}
   .level-progress-list .level-status{min-width:36px;padding:5px 6px;}

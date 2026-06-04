@@ -5,11 +5,11 @@ window.MTProgress = (function(){
   const CEO_NAME_KEY = "mt_zack_ceo_name";
   const TOTAL = 5;
   const LEVELS = [
-    { id: 1, file: "mt-level1-demo.html", name: "上班路上" },
-    { id: 2, file: "mt-level2-demo.html", name: "到公司了" },
-    { id: 3, file: "mt-level3-demo.html", name: "会议室" },
-    { id: 4, file: "mt-level4-demo.html", name: "食堂" },
-    { id: 5, file: "mt-level5-demo.html", name: "CEO办公室" }
+    { id: 1, file: "mt-level1-demo.html", name: "上班路上", desc: "从家门口出发，穿过拥堵路段。", image: "level1-opening-banner.webp" },
+    { id: 2, file: "mt-level2-demo.html", name: "到公司了", desc: "刷工牌、过闸机，正式进入打工副本。", image: "level2-opening-banner.webp" },
+    { id: 3, file: "mt-level3-demo.html", name: "会议室", desc: "在会议与道具之间找到通路。", image: "level3-opening-banner.webp" },
+    { id: 4, file: "mt-level4-demo.html", name: "食堂", desc: "端稳餐盘，穿过午饭高峰。", image: "level4-opening-banner.webp" },
+    { id: 5, file: "mt-level5-demo.html", name: "CEO办公室", desc: "完成最后的就职仪式。", image: "level5-opening-banner.webp" }
   ];
 
   function read(){
@@ -87,6 +87,10 @@ window.MTProgress = (function(){
     return fromRoot ? "src/" + lv.file : lv.file;
   }
 
+  function assetUrl(file, fromRoot){
+    return (fromRoot ? "assets/" : "../assets/") + "images/generated/" + file;
+  }
+
   function guardLevel(id){
     const unlock = new URLSearchParams(location.search).get("unlock");
     if(unlock === "all" || unlock === String(id)) return true;
@@ -101,7 +105,9 @@ window.MTProgress = (function(){
     const currentLevelId = opts.currentLevelId || 0;
     const data = read();
 
-    return `<div class="level-progress-list">${LEVELS.map(lv => {
+    const completedCount = data.completed.filter(id => id >= 1 && id <= TOTAL).length;
+    const unlockedCount = data.unlocked.filter(id => id >= 1 && id <= TOTAL).length;
+    return `<div class="level-progress-summary"><strong>${completedCount}/${TOTAL}</strong> 已通关 · <strong>${unlockedCount}/${TOTAL}</strong> 已解锁</div><div class="level-progress-list">${LEVELS.map(lv => {
       const unlocked = data.unlocked.includes(lv.id);
       const completed = data.completed.includes(lv.id);
       const current = lv.id === currentLevelId;
@@ -109,12 +115,14 @@ window.MTProgress = (function(){
       let state = completed ? "completed" : (unlocked ? "unlocked" : "locked");
       if(current) state += " current";
       const statusText = completed ? "已通关" : (unlocked ? "已解锁" : "未解锁");
-      const icon = completed ? "✓" : (unlocked ? "●" : "🔒");
+      const icon = completed ? "✓" : (unlocked ? "进入" : "锁定");
+      const thumb = assetUrl(lv.image, fromRoot);
+      const nextTip = lv.id > 1 ? `通关关卡${lv.id - 1}后解锁` : "开始冒险";
       const tag = unlocked
         ? `<a class="level-item ${state}" href="${url}" title="进入${lv.name}">`
         : `<div class="level-item ${state}" title="${statusText}">`;
       const end = unlocked ? "</a>" : "</div>";
-      return `${tag}<span class="level-num">${lv.id}</span><span class="level-name">${lv.name}</span><span class="level-status" aria-label="${statusText}">${icon}</span>${end}`;
+      return `${tag}<span class="level-thumb-wrap"><img class="level-thumb" src="${thumb}" alt="${lv.name}关卡图" loading="lazy"></span><span class="level-copy"><span class="level-title-row"><span class="level-num">${lv.id}</span><span class="level-name">${lv.name}</span></span><span class="level-desc">${unlocked ? lv.desc : nextTip}</span></span><span class="level-status" aria-label="${statusText}">${icon}</span>${end}`;
     }).join("")}</div>`;
   }
 
